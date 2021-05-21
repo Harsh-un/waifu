@@ -29,7 +29,7 @@ data_for_request = {
 }
 
 # Хранит id аниме для каждого пользователя
-store_id = dict()
+store_users_anime_id = dict()
 
 
 # genres-список индентификаторов жанров ОБЯЗАТЕЛЬНО
@@ -56,19 +56,29 @@ def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating=
     animes_id = []
     for anime in animes:
         animes_id.append(anime['id'])
-
     return animes_id
-
 
 # type - tv, movie
 def get_anime(user_id, type, genres, num_anime=0, name='', rating='none'):
-    anime_id = 0
-    # присутствует ли данный пользователь в хранилище id?
-    if user_id not in store_id:
-        store_id[user_id] = get_anime_id_list(type=type, genres=genres, name=name, rating=rating)
+    global store_users_anime_id
+    if user_id not in store_users_anime_id:
+        store_users_anime_id[user_id] = {
+            'animes': get_anime_id_list(type=type, genres=genres, name=name, rating=rating),
+            'page': num_anime % 50 + 1
+        }
+    elif num_anime % 50 + 1 > store_users_anime_id[user_id]['page']:
+        store_users_anime_id[user_id]['page'] = num_anime % 50 + 1
+        store_users_anime_id[user_id]['animes'] = get_anime_id_list(type=type, genres=genres,
+                                                                    page=store_users_anime_id[user_id]['page'],
+                                                                    name=name, rating=rating)
+    elif num_anime % 50 + 1 < store_users_anime_id[user_id]['page']:
+        store_users_anime_id[user_id]['page'] = num_anime % 50 + 1
+        store_users_anime_id[user_id]['animes'] = get_anime_id_list(type=type, genres=genres,
+                                                                    page=store_users_anime_id[user_id]['page'],
+                                                                    name=name, rating=rating)
 
     # получение id аниме
-    anime_id = store_id[user_id][num_anime]
+    anime_id = store_users_anime_id[user_id]['animes'][num_anime]
 
     # Получение подробной информации об определенном аниме по id
     anime_info = requests.get(url=site + '/api/animes/' + str(anime_id),
@@ -82,17 +92,8 @@ def get_anime(user_id, type, genres, num_anime=0, name='', rating='none'):
                                   headers=headers_for_request,
                                   )
 
-    anime_info = anime_info.json()
-    name = anime_info['russian']
-    score = anime_info['score']
-    description = anime_info['description']
-    image = site + anime_info['image']['original']
-    genres = ''
-    for genre in anime_info['genres']:
-        genres += genre['russian'] + ', '
-    genres = genres[:-2]
-
-    return (name, genres, score, description, image)
+    message = data_for_message(anime_info.json())
+    return message  # (name, genres, score, description, image)
 
 
 def get_new_access_token():
@@ -115,3 +116,19 @@ def get_new_access_token():
     with open('resources/token.json', 'w') as jsfile:
         json.dump(new_tokens, jsfile, indent=2)
     return
+
+
+def data_for_message(anime_info):
+    name = anime_info['russian']
+    score = anime_info['score']
+    description = anime_info['description']
+    image = site + anime_info['image']['original']
+    genres = ''
+    for genre in anime_info['genres']:
+        genres += genre['russian'] + ', '
+    genres = genres[:-2]
+    return (name, genres, score, description, image)
+
+
+def delete_info_users(user_id):
+    del store_users_anime_id[user_id]
