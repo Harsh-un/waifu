@@ -5,8 +5,8 @@ site = 'https://shikimori.one'
 client_id = 'P4VOYDWfWYQlhhFRqS8sONg39LAgHGHLRSTMU_1PMeM'
 client_secret = 'wno6Ij5zaplABAMFO1exSBQ2VCEY0pBEMJsQStKpr8M'
 authorization_code = 'rPXm12xqS9ygdnO438i4kI9iCBDmdGLLK5IaPKas5Iw'
-access_token = 'L7-sjIvOs_YFaGOGZqTWVke8H3WKmcbbxthBqp1UixQ'
-refresh_token = 'NaD-jjquohx3P-2SgY--_ITNWPgSxI4ouQqR_Dbb7io'
+access_token = ''
+refresh_token = ''
 # https://shikimori.one/api/animes?limit=2&order=ranked
 
 with open('resources/token.json', 'r') as file:
@@ -44,7 +44,14 @@ def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating=
         'censored': censored,
         'search': name
     }
+
     animes = requests.get(url=site + '/api/animes', headers=headers_for_request, params=parametrs)
+    # Если токен не валидный, то получаем новый
+    if animes.status_code == 401:
+        get_new_access_token()
+        animes = requests.get(url=site + '/api/animes', headers=headers_for_request, params=parametrs)
+    animes = animes.json()
+
     # Сохраняем id аниме в список
     animes_id = []
     for anime in animes:
@@ -66,8 +73,16 @@ def get_anime(user_id, type, genres, num_anime=0, name='', rating='none'):
     # Получение подробной информации об определенном аниме по id
     anime_info = requests.get(url=site + '/api/animes/' + str(anime_id),
                               headers=headers_for_request,
-                              ).json()
+                              )
 
+    # Если токен не валидный, то получаем новый
+    if anime_info.status_code == 401:
+        get_new_access_token()
+        anime_info = requests.get(url=site + '/api/animes/' + str(anime_id),
+                                  headers=headers_for_request,
+                                  )
+
+    anime_info = anime_info.json()
     name = anime_info['russian']
     score = anime_info['score']
     description = anime_info['description']
@@ -97,7 +112,6 @@ def get_new_access_token():
 
     access_token = new_tokens['access_token']
     refresh_token = new_tokens['refresh_token']
-    with open('resources/token.json', 'w') as file:
-        js_file = json.dump(new_tokens, file, indent=2)
-
+    with open('resources/token.json', 'w') as jsfile:
+        json.dump(new_tokens, jsfile, indent=2)
     return
