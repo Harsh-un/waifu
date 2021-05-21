@@ -44,7 +44,6 @@ def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating=
         'censored': censored,
         'search': name
     }
-
     animes = requests.get(url=site + '/api/animes', headers=headers_for_request, params=parametrs)
     # Если токен не валидный, то получаем новый
     if animes.status_code == 401:
@@ -57,6 +56,7 @@ def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating=
     for anime in animes:
         animes_id.append(anime['id'])
     return animes_id
+
 
 # type - tv, movie
 def get_anime(user_id, type, genres, num_anime=0, name='', rating='none'):
