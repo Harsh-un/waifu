@@ -33,7 +33,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
         pass
 
 
-class Aggregator(IAggregator):
+class ShikimoriAggregator(IAggregator):
     """Агрегатор (Shikimori)"""
     def __init__(self):
         pass
