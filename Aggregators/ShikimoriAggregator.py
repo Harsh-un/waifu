@@ -2,7 +2,7 @@ from Aggregators.IAggregator import *
 
 
 class ShikimoriItemFilter(IItemFilter):
-    """Фильтр анимэ (Shikimori)"""
+    """Фильтр аниме (Shikimori)"""
     def __init__(self, genres: list, order: str, score: int, rating: str, censored: bool, name: str):
         self.genres = genres
         self.order = order
@@ -13,7 +13,7 @@ class ShikimoriItemFilter(IItemFilter):
 
 
 class ShikimoriItem(IItem):
-    """Анимэ (Shikimori)"""
+    """Аниме (Shikimori)"""
     def __init__(self, name: str, genres: list, score: int, description: str, image_url: str):
         self.name = name
         self.genres = genres
@@ -25,7 +25,8 @@ class ShikimoriItem(IItem):
 class ShikimoriItemIterator(AbstractItemIterator):
     """Итератор (Shikimori)"""
     def __init__(self, item_filter: ShikimoriItemFilter):
-        AbstractItemIterator.__init__(self, item_filter)
+        AbstractItemIterator.__init__(self)
+        self.item_filter = item_filter
         self.item_ids = []
 
     def get_item(self, idx: int) -> IItem:
@@ -41,6 +42,6 @@ class ShikimoriAggregator(IAggregator):
     def get_name(self) -> str:
         return "Shikimori"
 
-    def get_items(self, item_filter: ShikimoriItemFilter) -> AbstractItemIterator:
+    def get_items(self, item_filter: IItemFilter) -> AbstractItemIterator:
         """Получить итератор"""
-        return ShikimoriItemIterator(item_filter)
+        return ShikimoriItemIterator(ShikimoriItemFilter(item_filter))

@@ -11,9 +11,8 @@ class IItem:
 
 
 class AbstractItemIterator:
-    """Итератор, который на ходу подгружает анимэ"""
-    def __init__(self, item_filter: IItemFilter):
-        self.item_filter = item_filter
+    """Итератор, который на ходу подгружает аниме"""
+    def __init__(self):
         self.idx = 0
 
     def get_next_item(self) -> IItem:
