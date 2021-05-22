@@ -9,7 +9,7 @@ access_token = ''
 refresh_token = ''
 # https://shikimori.one/api/animes?limit=2&order=ranked
 
-with open('resources/token.json', 'r') as file:
+with open('resources/ShikiToken.json', 'r') as file:
     data = json.load(file)
     global access_token
     global refresh_token
@@ -33,7 +33,7 @@ store_users_anime_id = dict()
 
 
 # genres-список индентификаторов жанров ОБЯЗАТЕЛЬНО
-def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating='none', censored='true', name=''):
+def get_anime_id_list(genres, page=1, limit=50, order='ranked', score=1, rating='none', censored='true', name=''):
     parametrs = {
         'page': page,
         'limit': limit,
@@ -45,7 +45,7 @@ def get_anime_id_list(genres, page=1, limit=50, order='random', score=1, rating=
         'search': name
     }
     animes = requests.get(url=site + '/api/animes', headers=headers_for_request, params=parametrs)
-    # Если токен не валидный, то получаем новый
+    # Если токен невалидный, то получаем новый
     if animes.status_code == 401:
         get_new_access_token()
         animes = requests.get(url=site + '/api/animes', headers=headers_for_request, params=parametrs)
@@ -82,7 +82,7 @@ def get_anime(user_id, type, genres, num_anime=0, name='', rating='none'):
 
     # Получение подробной информации об определенном аниме по id
     anime_info = requests.get(url=site + '/api/animes/' + str(anime_id),
-                              headers=headers_for_request,
+                              headers=headers_for_request
                               )
 
     # Если токен не валидный, то получаем новый
@@ -113,7 +113,7 @@ def get_new_access_token():
 
     access_token = new_tokens['access_token']
     refresh_token = new_tokens['refresh_token']
-    with open('resources/token.json', 'w') as jsfile:
+    with open('resources/ShikiToken.json', 'w') as jsfile:
         json.dump(new_tokens, jsfile, indent=2)
     return
 
