@@ -73,31 +73,32 @@ class ShikimoriAggregator(IAggregator):
 class ShikimoriItemIterator(AbstractItemIterator):
     """Итератор (Shikimori)"""
 
-    def __init__(self, item_filter: ShikimoriItemFilter):
+    def __init__(self, shiki: ShikimoriAggregator, item_filter: ShikimoriItemFilter):
         AbstractItemIterator.__init__(self)
+        self.shiki = shiki
         self.item_filter = item_filter
         self.item_ids = []
 
-    def get_item(self, shiki: ShikimoriAggregator, idx: int) -> IItem:
+    def get_item(self, idx: int) -> IItem:
         """Получить анимэ по индексу"""
         if self.item_ids == []:
-            self.item_ids = self.get_anime_id_list(self, shiki)
+            self.item_ids = self.get_anime_id_list(self, self.shiki)
         elif idx // 50 + 1 != self.item_filter.page:
             self.item_filter.page = idx // 50 + 1
-            self.item_ids = self.get_anime_id_list(self, shiki)
+            self.item_ids = self.get_anime_id_list(self, self.shiki)
 
-        anime_info = requests.get(url=shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
+        anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
                                   headers={
                                       "User-Agent": 'Telegram-Waifu',
-                                      'Authorization': 'Bearer ' + shiki.access_token
+                                      'Authorization': 'Bearer ' + self.shiki.access_token
                                   })
         # Если токен невалидный, то получаем новый
         if anime_info.status_code == 401:
-            shiki.get_new_token()
-            anime_info = requests.get(url=shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
+            self.shiki.get_new_token()
+            anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
                                       headers={
                                           "User-Agent": 'Telegram-Waifu',
-                                          'Authorization': 'Bearer ' + shiki.access_token
+                                          'Authorization': 'Bearer ' + self.shiki.access_token
                                       })
         anime_info = anime_info.json()
         genres = []
@@ -106,11 +107,11 @@ class ShikimoriItemIterator(AbstractItemIterator):
         return ShikimoriItem(anime_info['russian'], genres, anime_info['score'],
                              anime_info['description'], anime_info['image']['original'])
 
-    def get_anime_id_list(self, shiki: ShikimoriAggregator) -> list:
-        animes = requests.get(url=shiki.site + '/api/animes',
+    def get_anime_id_list(self) -> list:
+        animes = requests.get(url=self.shiki.site + '/api/animes',
                               headers={
                                   "User-Agent": 'Telegram-Waifu',
-                                  'Authorization': 'Bearer ' + shiki.access_token
+                                  'Authorization': 'Bearer ' + self.shiki.access_token
                               },
                               params={
                                   'page': self.item_filter.page,
@@ -124,11 +125,11 @@ class ShikimoriItemIterator(AbstractItemIterator):
                               })
         # Если токен невалидный, то получаем новый
         if animes.status_code == 401:
-            shiki.get_new_token()
-            animes = requests.get(url=shiki.site + '/api/animes',
+            self.shiki.get_new_token()
+            animes = requests.get(url=self.shiki.site + '/api/animes',
                                   headers={
                                       "User-Agent": 'Telegram-Waifu',
-                                      'Authorization': 'Bearer ' + shiki.access_token
+                                      'Authorization': 'Bearer ' + self.shiki.access_token
                                   },
                                   params={
                                       'page': self.item_filter.page,
