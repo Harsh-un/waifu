@@ -1,5 +1,10 @@
 TOKEN = '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg' # bot token from @BotFather
 
+ratingList = {"G":1, "PG":2, "PG-13":3, "R-17":4, "R+":5}
+assessmentList = {"6+":1, "7+":2, "8+":3}
+typeAnimeList = {"TV Сериал":1, "Фильм":2, "OVA":3, "ONA":4, "Спешл":5, "Клип":6}
+typeMangaList = {"Манга":1, "Манхва":2, "Маньхуа":3, "Ваншот":4, "Додзински":5}
+
 genresList = [
   {
     "id": 89,
