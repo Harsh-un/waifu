@@ -119,7 +119,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
                                   'order': self.item_filter.order,
                                   'score': self.item_filter.score,
                                   'rating': self.item_filter.rating,
-                                  'genre': self.item_filter.genres,
+                                  'genre': ','.join(self.item_filter.genres),
                                   'censored': self.item_filter.censored,
                                   'search': self.item_filter.name
                               })
@@ -137,7 +137,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
                                       'order': self.item_filter.order,
                                       'score': self.item_filter.score,
                                       'rating': self.item_filter.rating,
-                                      'genre': self.item_filter.genres,
+                                      'genre': ','.join(self.item_filter.genres),
                                       'censored': self.item_filter.censored,
                                       'search': self.item_filter.name
                                   })
