@@ -1,4 +1,5 @@
 from Aggregators.IAggregator import *
+from config import *
 import json
 import requests
 
@@ -36,11 +37,11 @@ class ShikimoriAggregator(IAggregator):
 
     def __init__(self):
         super().__init__()
-        self.site = 'https://shikimori.one'
+        self.site = CFG['aggregators']['shikimori']['site']
         self.client_id = 'P4VOYDWfWYQlhhFRqS8sONg39LAgHGHLRSTMU_1PMeM'
         self.client_secret = 'wno6Ij5zaplABAMFO1exSBQ2VCEY0pBEMJsQStKpr8M'
         self.authorization_code = 'rPXm12xqS9ygdnO438i4kI9iCBDmdGLLK5IaPKas5Iw'
-        with open('resources/ShikiToken.json', 'r') as file:
+        with open(f'{MAIN_DIR}resources/ShikiToken.json', 'r') as file:
             data = json.load(file)
             self.access_token = data['access_token']
             self.refresh_token = data['refresh_token']
@@ -50,7 +51,7 @@ class ShikimoriAggregator(IAggregator):
 
     def get_items(self, item_filter: ShikimoriItemFilter) -> AbstractItemIterator:
         """Получить итератор"""
-        return ShikimoriItemIterator(item_filter)
+        return ShikimoriItemIterator(self, item_filter)
 
     def get_new_token(self) -> None:
         new_token = requests.post(url=self.site + '/oauth/token',
@@ -65,7 +66,7 @@ class ShikimoriAggregator(IAggregator):
                                   }).json()
         self.access_token = new_token['access_token']
         self.refresh_token = new_token['refresh_token']
-        with open('resources/ShikiToken.json', 'w') as file:
+        with open(f'{MAIN_DIR}resources/ShikiToken.json', 'w') as file:
             json.dump(new_token, file, indent=2)
         return
 
@@ -79,13 +80,15 @@ class ShikimoriItemIterator(AbstractItemIterator):
         self.item_filter = item_filter
         self.item_ids = []
 
-    def get_item(self, idx: int) -> IItem:
-        """Получить анимэ по индексу"""
+    def get_item(self, idx: int) -> ShikimoriItem:
+        """Получить аниме по индексу"""
+        self.idx = idx
+
         if self.item_ids == []:
-            self.item_ids = self.get_anime_id_list(self, self.shiki)
+            self.item_ids = self.get_anime_id_list()
         elif idx // 50 + 1 != self.item_filter.page:
             self.item_filter.page = idx // 50 + 1
-            self.item_ids = self.get_anime_id_list(self, self.shiki)
+            self.item_ids = self.get_anime_id_list()
 
         anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
                                   headers={
