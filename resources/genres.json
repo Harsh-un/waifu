@@ -1,37 +1,4 @@
-import os
-
-# Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
-CFG = {
-    'aggregators': {
-        'shikimori': {
-            'name': 'Shikimori',
-            'site': 'https://shikimori.one',
-
-            'auth': {
-                'client_id': '',
-                'client_secret': '',
-                'authorization_code': '',
-                'shiki_token_file': 'resources/ShikiToken.json'
-            }
-        }
-    },
-
-    # токен для бота
-    # 'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
-    'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
-}
-
-# главная директория
-MAIN_DIR = os.path.dirname(os.path.realpath(__file__)) + '\\'
-
-
-ratingList = {"G":1, "PG":2, "PG-13":3, "R-17":4, "R+":5}
-assessmentList = {"6+":1, "7+":2, "8+":3}
-typeAnimeList = {"TV Сериал":1, "Фильм":2, "OVA":3, "ONA":4, "Спешл":5, "Клип":6}
-typeMangaList = {"Манга":1, "Манхва":2, "Маньхуа":3, "Ваншот":4, "Додзински":5}
-
-# список жанров
-genresList = [
+[
   {
     "id": 89,
     "name": "Police",

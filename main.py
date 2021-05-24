@@ -1,14 +1,18 @@
 import telebot
 import config
 from telebot import types
-from keyboa import Keyboa
 from PIL import Image
 from urllib.request import urlopen
-
 from enum import Enum
 
+from Aggregators.ShikimoriAggregator import ShikimoriItemFilter
+from ServerApplication import ServerApplication
+
+# серверное приложение
+app = ServerApplication()
+
 id = 0
-bot = telebot.TeleBot(config.TOKEN)
+bot = telebot.TeleBot(config.CFG['TOKEN'])
 msg = None
 searchName = False  # true если мы перешли в "Поиск по названию"
 srchType = None
@@ -129,7 +133,7 @@ def searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo):
       if siteVideo is not None:
         but_1 = types.InlineKeyboardButton(text="Смотреть", url=siteVideo)
         key.row(but_1)
-      but_2 = types.InlineKeyboardButton(text="Подробнее", url=siteInfo)
+
       but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
       #but_4 = types.InlineKeyboardButton(text="Назад", callback_data="BackAnime")
       #but_5 = types.InlineKeyboardButton(text="Вперед", callback_data="NextAnime")
@@ -138,9 +142,11 @@ def searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo):
       genres_str = ""
       for genre in genres:
         genres_str += genre + " | "
-      descript = "Название: " + name + "\nЖанры: " + genres_str + "\nРейтинг: " + str(score) + "\n\nОписание: " + description[0:800] + "..." 
+      descript = "Название: " + name + "\nЖанры: " + genres_str + "\nРейтинг: " + str(score) + "\n\nОписание: " + description[0:800] + "..."
 
-      key.row(but_2)
+      if siteInfo is not None:
+          but_2 = types.InlineKeyboardButton(text="Подробнее", url=siteInfo)
+          key.row(but_2)
       key.row(but_3)
       #key.row(but_4, but_5)
       key.row(but_6)
@@ -223,12 +229,18 @@ def send_text(message):
   global searchName
   # если мы в "Поиск по названию"
   if searchName:
-    if message.text.lower() == 'ходячий замок': #если введенное название есть в наше базе
-      key = types.InlineKeyboardMarkup()
-      name, genres, score, description, url, siteInfo, siteVideo = getAnimeForSearchName() # тут для манги написать функцию
-      img = Image.open(urlopen(url))
+    user = app.get_user_session(message.from_user.id)
+    user.cur_filter.name = message.text.lower()
+    user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+
+    # получили результат поиска
+    anime_info = user.cur_iterator.get_item(0)
+
+    if anime_info is not None: #если введенное название есть в наше базе
+      img = Image.open(urlopen(anime_info.image_url))
       image = getImage(img)
-      key, descript = searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo) # тут так же для манги
+      siteInfo, siteVideo = None,None
+      key, descript = searchNameMenuAnime(anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
       #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
       #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
       global msg
@@ -259,8 +271,12 @@ def send_text(message):
 
 @bot.callback_query_handler(func=lambda c:True)
 def inline(c):
+    user = app.get_user_session(c.from_user.id)
+
     # перешли по кнопке "Аниме"
     if c.data == 'Anime':
+      user.cur_filter = ShikimoriItemFilter()
+      user.cur_aggregator = app.shikimori_anime_agg
       global srchType
       srchType = TypeSearch.Anime
       photo = Image.open(r'static\animeMenu.jpg')
@@ -285,6 +301,8 @@ def inline(c):
 
     # перешли по кнопке "Манга"
     if c.data == 'Manga':
+      user.cur_filter = ShikimoriItemFilter()
+      user.cur_aggregator = app.shikimori_manga_agg
       srchType = TypeSearch.Manga
       photo = Image.open(r'static\mangaMenu.jpg')
       photo = getImage(photo)
@@ -490,4 +508,5 @@ def inline(c):
       bot.answer_callback_query(c.id, show_alert=True, text="Хотим получить предыдущее аниме")
 
 
-bot.polling(none_stop=True)
+if __name__ == "__main__":
+    bot.polling(none_stop=True)
