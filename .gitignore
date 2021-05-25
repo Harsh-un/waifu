@@ -1,0 +1,4 @@
+#folders
+venv/*
+.idea/*
+__pycache__/*
