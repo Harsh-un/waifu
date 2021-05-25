@@ -15,7 +15,10 @@ id = 0
 bot = telebot.TeleBot(config.CFG['TOKEN'])
 msg = None
 searchName = False  # true если мы перешли в "Поиск по названию"
+<<<<<<< HEAD
 searchFilter = False #true, если преходим в "Фильтры"
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
 srchType = None
 ratingList = config.ratingList
 assessmentList = config.assessmentList
@@ -102,6 +105,7 @@ def getGenresMenu(genresList, type):
     key.row(but_1, but_2)
     return key
 
+<<<<<<< HEAD
 # сброс фильтра для пользователя при выходе из меню Фильтр
 def zeroFilter(user):
   global searchFilter 
@@ -116,6 +120,8 @@ def zeroFilter(user):
   user.cur_filter.page=1
 
 
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
 # получаем меню Новинок для аниме
 def getNovinkiMenuAnime(name, genres, score, description, siteInfo, siteVideo):
     key = types.InlineKeyboardMarkup()
@@ -246,7 +252,10 @@ def send_text(message):
   if searchName:
     user = app.get_user_session(message.from_user.id)
     user.cur_filter.name = message.text.lower()
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
     user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
 
     # получили результат поиска
@@ -293,7 +302,10 @@ def inline(c):
     if c.data == 'Anime':
       user.cur_filter = ShikimoriItemFilter()
       user.cur_aggregator = app.shikimori_anime_agg
+<<<<<<< HEAD
       zeroFilter(user)
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       global srchType
       srchType = TypeSearch.Anime
       photo = Image.open(r'static\animeMenu.jpg')
@@ -319,7 +331,10 @@ def inline(c):
     # перешли по кнопке "Манга"
     if c.data == 'Manga':
       user.cur_filter = ShikimoriItemFilter()
+<<<<<<< HEAD
       zeroFilter(user)
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       user.cur_aggregator = app.shikimori_manga_agg
       srchType = TypeSearch.Manga
       photo = Image.open(r'static\mangaMenu.jpg')
@@ -344,7 +359,10 @@ def inline(c):
     # кнопка "Вернуться на главную"
     if c.data == "BackMainPage":
       setMainPage(c.message, True)
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
     
     # кнопка "Новинки" для Аниме
     if c.data == "NewAnime":
@@ -398,7 +416,10 @@ def inline(c):
     
     # фильтры для аниме
     if c.data == "FilterAnime":
+<<<<<<< HEAD
       searchFilter=True
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       photo = Image.open(r'static\filter.jpg')
       photo = getImage(photo)
       key = getFilterMenu(TypeSearch.Anime)
@@ -407,7 +428,10 @@ def inline(c):
 
     # фильтры для манги
     if c.data == "FilterManga":
+<<<<<<< HEAD
       searchFilter=True
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       photo = Image.open(r'static\filterManga.jpg')
       photo = getImage(photo)
       key = getFilterMenu(TypeSearch.Manga)
@@ -432,6 +456,7 @@ def inline(c):
 
     # при выборе жанра
     if c.data in genresAnime or c.data in genresMangu:
+<<<<<<< HEAD
       if srchType is TypeSearch.Anime:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresAnime[c.data]))
         user.cur_filter.genres.append(genresAnime[c.data])
@@ -439,6 +464,9 @@ def inline(c):
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresMangu[c.data]))
         user.cur_filter.genres.append(genresMangu[c.data])
 
+=======
+      bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresAnime[c.data]))
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       listOfSelectedGenres.append(c.data)
 
     # меню для выбора Рейтинга
@@ -461,7 +489,10 @@ def inline(c):
     # при выборе рейтинга
     if c.data in ratingList:
       bot.answer_callback_query(c.id, show_alert=True, text="Выбран рейтинг: " + c.data + " с id = " + str(ratingList[c.data]))
+<<<<<<< HEAD
       user.cur_filter.rating = ratingList[c.data]
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       ratingSelected.append(c.data)
 
     # меню для выбора Оценки
@@ -484,7 +515,10 @@ def inline(c):
     # при выборе оценки
     if c.data in assessmentList:
       bot.answer_callback_query(c.id, show_alert=True, text="Выбрана оценка: " + c.data + " с id = " + str(assessmentList[c.data]))
+<<<<<<< HEAD
       user.cur_filter.score = assessmentList[c.data]
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       assesmentSelected.append(c.data)
 
     # меню для выбора Типы для аниме
@@ -512,16 +546,25 @@ def inline(c):
     if c.data in typeAnimeList or c.data in typeMangaList:
       if srchType is TypeSearch.Anime:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeAnimeList[c.data]))
+<<<<<<< HEAD
         user.cur_filter.type = typeAnimeList[c.data]
       else:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeMangaList[c.data]))
         user.cur_filter.type = typeMangaList[c.data]
+=======
+      else:
+        bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeMangaList[c.data]))
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
       typeSelected.append(c.data)
 
     # Применить фильтры
     if c.data == "ApplyFilterAnime" or c.data == "ApplyFilterManga":
+<<<<<<< HEAD
       bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(map(str, user.cur_filter.genres)) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.type + "\nОценка: " + str(user.cur_filter.score))
       #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(listOfSelectedGenres) + "\nРейтинг: " + ''.join(ratingSelected) + "\nТип: " + ''.join(typeSelected) + "\nОценка: " + ''.join(assesmentSelected))
+=======
+      bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(listOfSelectedGenres) + "\nРейтинг: " + ''.join(ratingSelected) + "\nТип: " + ''.join(typeSelected) + "\nОценка: " + ''.join(assesmentSelected))
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
 
     # при запросе следующего аниме
     if c.data == "NextAnime":

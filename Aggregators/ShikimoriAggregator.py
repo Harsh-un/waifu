@@ -148,6 +148,10 @@ class ShikimoriItemIterator(AbstractItemIterator):
         # Сохраняем id аниме в список
         animes_id = []
         for anime in animes:
+<<<<<<< HEAD
             print(anime)
             #animes_id.append(anime['id'])
+=======
+            animes_id.append(anime['id'])
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
         return animes_id

@@ -1,4 +1,6 @@
 import os
+<<<<<<< HEAD
+=======
 
 # Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
 CFG = {
@@ -7,6 +9,33 @@ CFG = {
             'name': 'Shikimori',
             'site': 'https://shikimori.one',
 
+            'auth': {
+                'client_id': '',
+                'client_secret': '',
+                'authorization_code': '',
+                'shiki_token_file': 'resources/ShikiToken.json'
+            }
+        }
+    },
+
+    # токен для бота
+    # 'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
+    'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
+}
+
+# главная директория
+MAIN_DIR = os.path.dirname(os.path.realpath(__file__)) + '\\'
+
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
+
+# Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
+CFG = {
+    'aggregators': {
+        'shikimori': {
+            'name': 'Shikimori',
+            'site': 'https://shikimori.one',
+
+<<<<<<< HEAD
             'auth': {
                 'client_id': '',
                 'client_secret': '',
@@ -30,6 +59,8 @@ assessmentList = {"6+":6, "7+":7, "8+":8}
 typeAnimeList = {"TV Сериал":"tv", "Фильм":"movie", "OVA":"ova", "ONA":"ona", "Спешл":"special", "Клип":"music"}
 typeMangaList = {"Манга":"manga", "Манхва":"manhwa", "Маньхуа":"manhua", "Ваншот":"one_shot", "Додзински":"doujin"}
 
+=======
+>>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
 # список жанров
 genresList = [
   {
