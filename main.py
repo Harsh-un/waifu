@@ -185,6 +185,39 @@ def getImage(image):
     image_fon.paste(image, (round((basewidth-image.size[0])/2), 0))
     return image_fon
 
+# получение аниме/манги по фильтрам
+def getItems(user, message):
+
+  user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+
+  # получили результат поиска
+  anime_info = user.cur_iterator.get_item(0)
+
+  #print(anime_info.name)
+  if anime_info is not None: #если введенное название есть в наше базе
+    img = Image.open(urlopen(anime_info.image_url))
+    image = getImage(img)
+    siteInfo, siteVideo = None,None
+    key, descript = searchNameMenuAnime(anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
+    #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
+    #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
+    global msg
+    bot.delete_message(message.chat.id, msg.message_id)
+    msg = bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
+    #bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
+  else: 
+    key = types.InlineKeyboardMarkup()
+    global srchType
+    if srchType is TypeSearch.Anime:
+      but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Anime")
+    elif srchType is TypeSearch.Manga:
+      but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Manga")
+    key.row(but_2)
+    image = Image.open(r'static\searchnameAnime.jpg')
+    getImage(image)
+    bot.delete_message(message.chat.id, msg.message_id)
+    msg = bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
+
 def getAnime():
     name = "Виви: Песнь флюоритового глаза / Vivy: Fluorite Eye's Song"
     genres = ["Экшен", "Музыка", "Фантастика", "Триллер"]
@@ -250,38 +283,7 @@ def send_text(message):
   if searchName:
     user = app.get_user_session(message.from_user.id)
     user.cur_filter.name = message.text.lower()
-
-    user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
-
-    # получили результат поиска
-    anime_info = user.cur_iterator.get_item(0)
-
-    #print(anime_info.name)
-    if anime_info is not None: #если введенное название есть в наше базе
-      img = Image.open(urlopen(anime_info.image_url))
-      image = getImage(img)
-      siteInfo, siteVideo = None,None
-      key, descript = searchNameMenuAnime(anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
-      #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
-      #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
-      global msg
-      bot.delete_message(message.chat.id, msg.message_id)
-      msg = bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
-      #bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
-    else: 
-      key = types.InlineKeyboardMarkup()
-      global srchType
-      if srchType is TypeSearch.Anime:
-        but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Anime")
-      elif srchType is TypeSearch.Manga:
-        but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Manga")
-      key.row(but_2)
-      image = Image.open(r'static\searchnameAnime.jpg')
-      getImage(image)
-      bot.delete_message(message.chat.id, msg.message_id)
-      msg = bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
-      #bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
-      #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="Ничего не найдено, мен(", reply_markup=key)
+    getItems(user, message)
     searchName = False
   else:
     bot.send_message(message.chat.id, "Не стоит спамить!\nНачни заново")
@@ -540,8 +542,8 @@ def inline(c):
 
     # Применить фильтры
     if c.data == "ApplyFilterAnime" or c.data == "ApplyFilterManga":
-
-      bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(map(str, user.cur_filter.genres)) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.type + "\nОценка: " + str(user.cur_filter.score))
+      #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(map(str, user.cur_filter.genres)) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.type + "\nОценка: " + str(user.cur_filter.score))
+      getItems(user, c.message)
       #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(listOfSelectedGenres) + "\nРейтинг: " + ''.join(ratingSelected) + "\nТип: " + ''.join(typeSelected) + "\nОценка: " + ''.join(assesmentSelected))
       
 
