@@ -8,9 +8,9 @@ CFG = {
             'site': 'https://shikimori.one',
 
             'auth': {
-                'client_id': '',
-                'client_secret': '',
-                'authorization_code': '',
+                'client_id': 'P4VOYDWfWYQlhhFRqS8sONg39LAgHGHLRSTMU_1PMeM',
+                'client_secret': 'wno6Ij5zaplABAMFO1exSBQ2VCEY0pBEMJsQStKpr8M',
+                'authorization_code': 'rPXm12xqS9ygdnO438i4kI9iCBDmdGLLK5IaPKas5Iw',
                 'shiki_token_file': 'resources/ShikiToken.json'
             }
         }
