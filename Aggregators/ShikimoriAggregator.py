@@ -8,12 +8,13 @@ class ShikimoriItemFilter(IItemFilter):
     """Фильтр аниме (Shikimori)"""
 
     def __init__(self, genres: list = [], order: str = 'ranked', score: int = 1, rating: str = 'none',
-                 censored: str = 'true', name: str = "", page: int = 1, limit: int = 50):
+                 kind: str = 'tv', censored: str = 'true', name: str = "", page: int = 1, limit: int = 50):
         super().__init__()
         self.genres = genres
         self.order = order
         self.score = score
         self.rating = rating
+        self.kind = kind
         self.censored = censored
         self.name = name
         self.page = page
@@ -38,9 +39,9 @@ class ShikimoriAggregator(IAggregator):
     def __init__(self):
         super().__init__()
         self.site = CFG['aggregators']['shikimori']['site']
-        self.client_id = 'P4VOYDWfWYQlhhFRqS8sONg39LAgHGHLRSTMU_1PMeM'
-        self.client_secret = 'wno6Ij5zaplABAMFO1exSBQ2VCEY0pBEMJsQStKpr8M'
-        self.authorization_code = 'rPXm12xqS9ygdnO438i4kI9iCBDmdGLLK5IaPKas5Iw'
+        self.client_id = CFG['aggregators']['shikimori']['client_id']
+        self.client_secret = CFG['aggregators']['shikimori']['client_secret']
+        self.authorization_code = CFG['aggregators']['shikimori']['authorization_code']
         with open(f'{MAIN_DIR}resources/ShikiToken.json', 'r') as file:
             data = json.load(file)
             self.access_token = data['access_token']
@@ -78,7 +79,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
         AbstractItemIterator.__init__(self)
         self.shiki = shiki
         self.item_filter = item_filter
-        self.item_ids = []
+        self.item_ids = [] # self.get_anime_id_list()
 
     def get_item(self, idx: int) -> ShikimoriItem:
         """Получить аниме по индексу"""
@@ -90,6 +91,9 @@ class ShikimoriItemIterator(AbstractItemIterator):
             self.item_filter.page = idx // 50 + 1
             self.item_ids = self.get_anime_id_list()
 
+        # дописать обработчик событий если item_ids == []
+        if not(idx < len(self.item_ids)):
+            return None
         anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
                                   headers={
                                       "User-Agent": 'Telegram-Waifu',
