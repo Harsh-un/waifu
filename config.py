@@ -17,8 +17,8 @@ CFG = {
     },
 
     # токен для бота
-    # 'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
-    'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
+    'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
+    # 'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
 }
 
 # главная директория

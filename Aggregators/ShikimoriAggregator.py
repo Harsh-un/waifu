@@ -7,8 +7,8 @@ import requests
 class ShikimoriItemFilter(IItemFilter):
     """Фильтр аниме (Shikimori)"""
 
-    def __init__(self, genres: list = [], order: str = 'ranked', score: int = 1, rating: str = 'none',
-                 kind: str = 'tv', censored: str = 'true', name: str = "", page: int = 1, limit: int = 50):
+    def __init__(self, genres: list = [], order: str = 'ranked', score: int = 1, rating: str = '',
+                 kind: str = '', censored: str = 'true', name: str = "", page: int = 1, limit: int = 50):
         super().__init__()
         self.genres = genres
         self.order = order
@@ -24,13 +24,16 @@ class ShikimoriItemFilter(IItemFilter):
 class ShikimoriItem(IItem):
     """Аниме (Shikimori)"""
 
-    def __init__(self, name: str = '', genres: list = [], score: int = 0, description: str = '', image_url: str = ''):
+    def __init__(self, name: str = '', genres: list = [], score: int = 0, description: str = '', image_url: str = '',
+                 site_url: str = 'https://shikimori.one/', video_url: str = None):
         super().__init__()
         self.name = name
         self.genres = genres
         self.score = score
         self.description = description
         self.image_url = image_url
+        self.site_url = site_url
+        self.video_url = video_url
 
 
 class ShikimoriAggregator(IAggregator):
@@ -39,9 +42,9 @@ class ShikimoriAggregator(IAggregator):
     def __init__(self):
         super().__init__()
         self.site = CFG['aggregators']['shikimori']['site']
-        self.client_id = CFG['aggregators']['shikimori']['client_id']
-        self.client_secret = CFG['aggregators']['shikimori']['client_secret']
-        self.authorization_code = CFG['aggregators']['shikimori']['authorization_code']
+        self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
+        self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
+        self.authorization_code = CFG['aggregators']['shikimori']['auth']['authorization_code']
         with open(f'{MAIN_DIR}resources/ShikiToken.json', 'r') as file:
             data = json.load(file)
             self.access_token = data['access_token']
@@ -126,6 +129,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
                                   'order': self.item_filter.order,
                                   'score': self.item_filter.score,
                                   'rating': self.item_filter.rating,
+                                  'kind': self.item_filter.kind,
                                   'genre': ','.join(self.item_filter.genres),
                                   'censored': self.item_filter.censored,
                                   'search': self.item_filter.name
