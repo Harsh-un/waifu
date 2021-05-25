@@ -39,9 +39,9 @@ class ShikimoriAggregator(IAggregator):
     def __init__(self):
         super().__init__()
         self.site = CFG['aggregators']['shikimori']['site']
-        self.client_id = CFG['aggregators']['shikimori']['client_id']
-        self.client_secret = CFG['aggregators']['shikimori']['client_secret']
-        self.authorization_code = CFG['aggregators']['shikimori']['authorization_code']
+        self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
+        self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
+        self.authorization_code = CFG['aggregators']['shikimori']['auth']['authorization_code']
         with open(f'{MAIN_DIR}resources/ShikiToken.json', 'r') as file:
             data = json.load(file)
             self.access_token = data['access_token']
@@ -92,6 +92,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
             self.item_ids = self.get_anime_id_list()
 
         # дописать обработчик событий если item_ids == []
+        print(self.item_ids)
         if not(idx < len(self.item_ids)):
             return None
         anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
@@ -152,10 +153,8 @@ class ShikimoriItemIterator(AbstractItemIterator):
         # Сохраняем id аниме в список
         animes_id = []
         for anime in animes:
-<<<<<<< HEAD
+
             print(anime)
             #animes_id.append(anime['id'])
-=======
             animes_id.append(anime['id'])
->>>>>>> ba3b9f9aae733de8450745f3bb92f8c5529b287f
         return animes_id
