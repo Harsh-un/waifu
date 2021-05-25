@@ -1,6 +1,5 @@
 import os
 
-
 # Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
 CFG = {
     'aggregators': {
@@ -18,34 +17,8 @@ CFG = {
     },
 
     # токен для бота
-     'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
-    #'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
-}
-
-# главная директория
-MAIN_DIR = os.path.dirname(os.path.realpath(__file__)) + '\\'
-
-
-
-# Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
-CFG = {
-    'aggregators': {
-        'shikimori': {
-            'name': 'Shikimori',
-            'site': 'https://shikimori.one',
-
-            'auth': {
-                'client_id': '',
-                'client_secret': '',
-                'authorization_code': '',
-                'shiki_token_file': 'resources/ShikiToken.json'
-            }
-        }
-    },
-
-    # токен для бота
     'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
-    #'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
+    # 'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
 }
 
 # главная директория
