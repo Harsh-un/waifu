@@ -97,7 +97,8 @@ class ShikimoriItemIterator(AbstractItemIterator):
         # дописать обработчик событий если item_ids == []
         if not(idx < len(self.item_ids)):
             return None
-        anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
+        request_api = self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50])
+        anime_info = requests.get(url=request_api,
                                   headers={
                                       "User-Agent": 'Telegram-Waifu',
                                       'Authorization': 'Bearer ' + self.shiki.access_token
@@ -105,7 +106,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
         # Если токен невалидный, то получаем новый
         if anime_info.status_code == 401:
             self.shiki.get_new_token()
-            anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
+            anime_info = requests.get(url=request_api,
                                       headers={
                                           "User-Agent": 'Telegram-Waifu',
                                           'Authorization': 'Bearer ' + self.shiki.access_token
@@ -114,8 +115,23 @@ class ShikimoriItemIterator(AbstractItemIterator):
         genres = []
         for genre in anime_info['genres']:
             genres.append(genre['russian'])
+
+        video_url = None
+        if anime_info['licensors'] != []:
+            video_url = self.get_video_link(anime_info['licensors'], request_api)
+
         return ShikimoriItem(anime_info['russian'], genres, anime_info['score'],
-                             anime_info['description'], self.shiki.site + anime_info['image']['original'])
+                             anime_info['description'], self.shiki.site + anime_info['image']['original'],
+                             self.shiki.site + anime_info['url'], video_url)
+
+    def get_video_link(self, licensors: list, request_api: str) -> str:
+        links = requests.get(url=request_api + '/external_links').json()
+        for link in links:
+            if str.lower(link['kind']) == str.lower(licensors[0]):
+                video_url = link['url']
+                break
+        return video_url
+
 
     def get_anime_id_list(self) -> list:
         animes = requests.get(url=self.shiki.site + '/api/animes',
