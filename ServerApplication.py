@@ -6,8 +6,7 @@ class ServerApplication:
     """Главный класс, который содержит сессии юзеров, агрегаторы"""
     def __init__(self):
         self.user_session = {}
-        self.shikimori_anime_agg = ShikimoriAggregator()
-        self.shikimori_manga_agg = ShikimoriAggregator()
+        self.shikimori_agg = ShikimoriAggregator()
 
     def get_user_session(self, user_id: int):
         """Получить сессию юзера"""

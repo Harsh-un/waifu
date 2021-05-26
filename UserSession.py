@@ -8,3 +8,4 @@ class UserSession:
         self.cur_aggregator = None
         self.cur_filter = None
         self.cur_iterator = None
+        self.cur_type = None

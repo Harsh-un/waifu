@@ -18,19 +18,19 @@ class AbstractItemIterator:
     def get_next_item(self) -> IItem:
         """Следующий"""
         self.idx += 1
-        return self.get_item(self.idx)
+        return self.get_item()
 
     def get_prev_item(self) -> IItem:
         """Предыдущий"""
         if self.idx != 0:
             self.idx -= 1
-        return self.get_item(self.idx)
+        return self.get_item()
 
     def empty(self) -> bool:
         """Пустой ли итератор"""
-        return self.get_item(0) is None
+        return self.get_item() is None
 
-    def get_item(self, idx: int) -> IItem:
+    def get_item(self) -> IItem:
         """Получить item по индексу"""
         pass
 
