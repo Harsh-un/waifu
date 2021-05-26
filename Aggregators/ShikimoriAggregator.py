@@ -84,20 +84,17 @@ class ShikimoriItemIterator(AbstractItemIterator):
         self.item_filter = item_filter
         self.item_ids = [] # self.get_anime_id_list()
 
-    def get_item(self, idx: int) -> ShikimoriItem:
+    def get_item(self) -> ShikimoriItem:
         """Получить аниме по индексу"""
-        self.idx = idx
-
         if self.item_ids == []:
             self.item_ids = self.get_anime_id_list()
-        elif idx // 50 + 1 != self.item_filter.page:
-            self.item_filter.page = idx // 50 + 1
+        elif self.idx // 50 + 1 != self.item_filter.page:
+            self.item_filter.page = self.idx // 50 + 1
             self.item_ids = self.get_anime_id_list()
 
-        # дописать обработчик событий если item_ids == []
-        if not(idx < len(self.item_ids)):
+        if not(self.idx < len(self.item_ids)):
             return None
-        request_api = self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50])
+        request_api = self.shiki.site + '/api/animes/' + str(self.item_ids[self.idx % 50])
         anime_info = requests.get(url=request_api,
                                   headers={
                                       "User-Agent": 'Telegram-Waifu',
