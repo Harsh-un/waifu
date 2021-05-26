@@ -1,12 +1,10 @@
 from Aggregators.ShikimoriAggregator import *
-from ServerApplication import ServerApplication
 
-
-def test_shikimori_aggregator():
+def test_filter():
     """Проверка работы аггрегатора"""
 
     # объект аггрегатора
-    agg = ShikimoriAggregator()
+    agg = ShikimoriAggregator(TypeElem.ANIME)
 
     # объект фильтра, который заполняется через интерфейс телеги
     item_filter = ShikimoriItemFilter()
@@ -15,7 +13,7 @@ def test_shikimori_aggregator():
     item_iterator = agg.get_items(item_filter)
 
     # получение первого аниме
-    item = item_iterator.get_item(0)
+    item = item_iterator.get_item()
 
     # получение следующего аниме
     next_item = item_iterator.get_next_item()
@@ -23,7 +21,7 @@ def test_shikimori_aggregator():
 
 def test_search():
     # объект аггрегатора
-    agg = ShikimoriAggregator()
+    agg = ShikimoriAggregator(TypeElem.ANIME)
 
     # объект фильтра, который заполняется через интерфейс телеги
     item_filter = ShikimoriItemFilter(name='Берсерк')
@@ -31,18 +29,16 @@ def test_search():
     # получение итератора аниме, чтобы проходится по ним вперед-назад
     item_iterator = agg.get_items(item_filter)
 
-    # получение первого аниме
-    item = item_iterator.get_item(0)
-
-    # получение следующего аниме
-    next_item = item_iterator.get_next_item()
+    # получение аниме
+    item, next_item = item_iterator.get_item(), item_iterator.get_next_item()
+    return
 
 def test_all():
     """Запуск всех тестов"""
     # Тест 1
-    test_shikimori_aggregator()
+    test_filter()
     # Тест 2
-
+    test_search()
     return
 
 

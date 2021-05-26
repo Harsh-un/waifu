@@ -136,7 +136,12 @@ class ShikimoriItemIterator(AbstractItemIterator):
                              self.shiki.site + details['url'], media_urls)
 
     def get_video_link(self, licensors: list, request_url: str) -> list:
-        links = requests.get(url=request_url + '/external_links').json()
+        links_content = requests.get(url=request_url + '/external_links')
+        try:
+            links = links_content.json()
+        except Exception as ex:
+            return []
+
         result = []
         for link in links:
             if str.lower(link['kind']) in licensors:

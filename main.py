@@ -198,7 +198,7 @@ def getItems(user, message):
   user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
 
   # получили результат поиска
-  anime_info = user.cur_iterator.get_item(0)
+  anime_info = user.cur_iterator.get_item()
 
   #print(anime_info.name)
   if anime_info is not None: #если введенное название нашлось
