@@ -2,6 +2,13 @@ from Aggregators.IAggregator import *
 from config import *
 import json
 import requests
+from enum import Enum
+
+
+# флаги для анме и манги
+class TypeElem(Enum):
+    ANIME = 1
+    MANGA = 2
 
 
 class ShikimoriItemFilter(IItemFilter):
@@ -39,8 +46,9 @@ class ShikimoriItem(IItem):
 class ShikimoriAggregator(IAggregator):
     """Агрегатор (Shikimori)"""
 
-    def __init__(self):
+    def __init__(self, type_elem: TypeElem):
         super().__init__()
+        self.type_elem = type_elem
         self.site = CFG['aggregators']['shikimori']['site']
         self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
         self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
@@ -51,11 +59,13 @@ class ShikimoriAggregator(IAggregator):
             self.refresh_token = data['refresh_token']
 
     def get_name(self) -> str:
-        return "Shikimori"
+        if self.type_elem == TypeElem.ANIME:
+            return "Shikimori (Anime)"
+        return "Shikimori (Manga)"
 
     def get_items(self, item_filter: ShikimoriItemFilter) -> AbstractItemIterator:
         """Получить итератор"""
-        return ShikimoriItemIterator(self, item_filter)
+        return ShikimoriItemIterator(self, self.type_elem, item_filter)
 
     def get_new_token(self) -> None:
         new_token = requests.post(url=self.site + '/oauth/token',
