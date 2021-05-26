@@ -23,6 +23,7 @@ ratingList = config.ratingList
 assessmentList = config.assessmentList
 typeAnimeList = config.typeAnimeList
 typeMangaList = config.typeMangaList
+keyGenre = None
 
 listOfSelectedGenres = []
 ratingSelected = []
@@ -38,15 +39,13 @@ def getGenresAnimeOrMangu():
     items = config.genresList
     genresAnime = {}
     genresMangu = {}
-    k1 = 0
-    k2 = 0
     for item in items:
       if item['kind'] == "anime":
-        genresAnime[item['russian']] = item['id']
-        k1 += 1
+        #genresAnime[item['russian']] = item['id']
+        genresAnime[str(item['id'])] = item['russian']
       elif item['kind'] == "manga":
-        genresMangu[item['russian']] = item['id']
-        k2 += 1
+        #genresMangu[item['russian']] = item['id']
+        genresMangu[str(item['id'])] = item['russian']
     return genresAnime, genresMangu
 
 genresAnime, genresMangu = getGenresAnimeOrMangu() 
@@ -61,6 +60,7 @@ def getFilterMenu(type):
       but_4 = types.InlineKeyboardButton(text="Тип", callback_data="TypeMenu")
       but_5 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Anime")
       but_6 = types.InlineKeyboardButton(text="Применить фильтр", callback_data="ApplyFilterAnime")
+      but_8 = types.InlineKeyboardButton(text="Сбросить фильтр", callback_data="ResetFilter")
       key.row(but_1)
       key.row(but_2)
     elif type is TypeSearch.Manga:
@@ -69,12 +69,13 @@ def getFilterMenu(type):
       but_4 = types.InlineKeyboardButton(text="Тип", callback_data="TypeMenu")
       but_5 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Manga")
       but_6 = types.InlineKeyboardButton(text="Применить фильтр", callback_data="ApplyFilterManga")
+      but_8 = types.InlineKeyboardButton(text="Сбросить фильтр", callback_data="ResetFilter")
       key.row(but_1)
     but_7 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
     key.row(but_3)
     key.row(but_4)
     key.row(but_5, but_7)
-    key.row(but_6)
+    key.row(but_6, but_8)
     return key
 
 # получить меню жанров
@@ -82,12 +83,12 @@ def getGenresMenu(genresList, type):
     key = types.InlineKeyboardMarkup()
     count_col = 0
     but_row = []
-    for item, id in genresList.items():
+    for id, item in genresList.items():
       if count_col < 2:
-        but_row.append(types.InlineKeyboardButton(text=item, callback_data=item))
+        but_row.append(types.InlineKeyboardButton(text=item, callback_data=id))
         count_col += 1
       elif count_col == 2:
-        but_row.append(types.InlineKeyboardButton(text=item, callback_data=item))
+        but_row.append(types.InlineKeyboardButton(text=item, callback_data=id))
         count_col = 0
         key.row(but_row[0], but_row[1], but_row[2])
         but_row = []
@@ -109,14 +110,7 @@ def getGenresMenu(genresList, type):
 def zeroFilter(user):
   global searchFilter 
   searchFilter = False
-  user.cur_filter.genres = []
-  #user.cur_filter.order =""
-  user.cur_filter.score=1
-  user.cur_filter.rating ='none'
-  #user.cur_filter.type=""
-  user.cur_filter.name=""
-  user.cur_filter.censored="true"
-  user.cur_filter.page=1
+  user.cur_filter = ShikimoriItemFilter()
 
 
 
@@ -156,12 +150,25 @@ def searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo):
       but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
       #but_4 = types.InlineKeyboardButton(text="Назад", callback_data="BackAnime")
       #but_5 = types.InlineKeyboardButton(text="Вперед", callback_data="NextAnime")
-      but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Anime")
+      if srchType is TypeSearch.Anime:
+        if searchFilter:
+          but_6 = types.InlineKeyboardButton(text="Вернуться к фильтрам", callback_data="FilterAnime")
+        else:
+          but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Anime")
+      elif srchType is TypeSearch.Manga:
+        if searchFilter:
+          but_6 = types.InlineKeyboardButton(text="Вернуться к фильтрам", callback_data="FilterManga")
+        else:
+          but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Manga")
       but_7 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
       genres_str = ""
       for genre in genres:
         genres_str += genre + " | "
-      descript = "Название: " + name + "\nЖанры: " + genres_str + "\nРейтинг: " + str(score) + "\n\nОписание: " + description[0:800] + "..."
+
+      if description is None:
+        description = "Нет описания"
+
+      descript = "*Название:* " + name + "\n*Жанры:* " + genres_str + "\n*Рейтинг:* " + str(score) + "\n\n*Описание:* " + description[0:800] + "..."
 
       if siteInfo is not None:
           but_2 = types.InlineKeyboardButton(text="Подробнее", url=siteInfo)
@@ -194,7 +201,7 @@ def getItems(user, message):
   anime_info = user.cur_iterator.get_item(0)
 
   #print(anime_info.name)
-  if anime_info is not None: #если введенное название есть в наше базе
+  if anime_info is not None: #если введенное название нашлось
     img = Image.open(urlopen(anime_info.image_url))
     image = getImage(img)
     siteInfo, siteVideo = None,None
@@ -203,20 +210,43 @@ def getItems(user, message):
     #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
     global msg
     bot.delete_message(message.chat.id, msg.message_id)
-    msg = bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
+    msg = bot.send_photo(message.chat.id, image, caption=descript, parse_mode='Markdown', reply_markup=key)
     #bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
   else: 
     key = types.InlineKeyboardMarkup()
     global srchType
-    if srchType is TypeSearch.Anime:
-      but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Anime")
-    elif srchType is TypeSearch.Manga:
-      but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Manga")
+    if searchFilter:
+      if srchType is TypeSearch.Anime:
+        but_2 = types.InlineKeyboardButton(text="Назад к фильтрам", callback_data="FilterAnime")
+      elif srchType is TypeSearch.Manga:
+        but_2 = types.InlineKeyboardButton(text="Назад к фильтрам", callback_data="FilterManga")
+    else:  
+      if srchType is TypeSearch.Anime:
+        but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Anime")
+      elif srchType is TypeSearch.Manga:
+        but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Manga")
     key.row(but_2)
     image = Image.open(r'static\searchnameAnime.jpg')
     getImage(image)
     bot.delete_message(message.chat.id, msg.message_id)
     msg = bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
+
+
+# Описание всех выбранных фильтров
+def getCaptionFiltres(user):
+    if user.cur_filter.genres == [] and user.cur_filter.kind == "" and user.cur_filter.rating == "" and user.cur_filter.score == 1:
+      capt = "Вы еще ничего не выбрали\nПора это сделать!"
+    elif srchType is TypeSearch.Anime: 
+      capt = "*Вы выбрали:*\n*Жанры:* " + ', '.join(list(map(lambda x: genresAnime[x], user.cur_filter.genres))) + \
+                          "\n*Оценка:* " + str(user.cur_filter.score) + \
+                          "\n*Рейтинг:* " + user.cur_filter.rating + \
+                          "\n*Тип:* " + user.cur_filter.kind
+    elif srchType is TypeSearch.Manga: 
+      capt = "*Вы выбрали:*\n*Жанры:* " + ', '.join(list(map(lambda x: genresMangu[x], user.cur_filter.genres))) + \
+                          "\n*Оценка:* " + str(user.cur_filter.score) + \
+                          "\n*Тип:* " + user.cur_filter.kind
+    return capt  
+
 
 def getAnime():
     name = "Виви: Песнь флюоритового глаза / Vivy: Fluorite Eye's Song"
@@ -409,14 +439,15 @@ def inline(c):
     
     # фильтры для аниме
     if c.data == "FilterAnime":
-
+      global searchFilter
       searchFilter=True
 
       photo = Image.open(r'static\filter.jpg')
       photo = getImage(photo)
       key = getFilterMenu(TypeSearch.Anime)
+      capt = getCaptionFiltres(user)
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
-      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="Укажи свои предпочтения:", reply_markup=key)
+      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=capt, parse_mode='Markdown', reply_markup=key)
 
     # фильтры для манги
     if c.data == "FilterManga":
@@ -426,38 +457,41 @@ def inline(c):
       photo = Image.open(r'static\filterManga.jpg')
       photo = getImage(photo)
       key = getFilterMenu(TypeSearch.Manga)
+      capt = getCaptionFiltres(user)
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
-      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="Укажи свои предпочтения:", reply_markup=key)
+      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=capt, parse_mode='Markdown', reply_markup=key)
     
     # жанры для аниме
     if c.data == "GenresAnime":
       photo = Image.open(r'static\genres.jpg')
       photo = getImage(photo)
-      key = getGenresMenu(genresAnime, TypeSearch.Anime)
+      global keyGenre
+      keyGenre = getGenresMenu(genresAnime, TypeSearch.Anime)
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
-      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="Выбери жанры:", reply_markup=key)
+      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresAnime[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
 
     # жанры для манги
     if c.data == "GenresManga":
       photo = Image.open(r'static\genresMangu.jpg')
       photo = getImage(photo)
-      key = getGenresMenu(genresMangu, TypeSearch.Manga)
+      keyGenre = getGenresMenu(genresMangu, TypeSearch.Manga)
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
-      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="Выбери жанры:", reply_markup=key)
+      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresMangu[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
 
     # при выборе жанра
     if c.data in genresAnime or c.data in genresMangu:
-      if srchType is TypeSearch.Anime:
-        bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresAnime[c.data]))
-        user.cur_filter.genres.append(genresAnime[c.data])
-      elif srchType is TypeSearch.Manga:
-        bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresMangu[c.data]))
-        user.cur_filter.genres.append(genresMangu[c.data])
-
-
-      bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + c.data + " с id = " + str(genresAnime[c.data]))
-
-      listOfSelectedGenres.append(c.data)
+      
+      # если жанр уже есть в выбранных, то не добавляем
+      if c.data not in user.cur_filter.genres:
+        if srchType is TypeSearch.Anime:
+          bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + genresAnime[c.data] + " с id = " + c.data)
+          user.cur_filter.genres.append(c.data)
+          bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresAnime[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
+        elif srchType is TypeSearch.Manga:
+          bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + genresMangu[c.data] + " с id = " + c.data)
+          user.cur_filter.genres.append(c.data)
+          bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresMangu[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
+        
 
     # меню для выбора Рейтинга
     if c.data == "Rating":
@@ -504,9 +538,7 @@ def inline(c):
     # при выборе оценки
     if c.data in assessmentList:
       bot.answer_callback_query(c.id, show_alert=True, text="Выбрана оценка: " + c.data + " с id = " + str(assessmentList[c.data]))
-
       user.cur_filter.score = assessmentList[c.data]
-
       assesmentSelected.append(c.data)
 
     # меню для выбора Типы для аниме
@@ -534,19 +566,32 @@ def inline(c):
     if c.data in typeAnimeList or c.data in typeMangaList:
       if srchType is TypeSearch.Anime:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeAnimeList[c.data]))
-        user.cur_filter.type = typeAnimeList[c.data]
+        user.cur_filter.kind = typeAnimeList[c.data]
       else:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeMangaList[c.data]))
-        user.cur_filter.type = typeMangaList[c.data]
+        user.cur_filter.kind = typeMangaList[c.data]
       typeSelected.append(c.data)
 
     # Применить фильтры
     if c.data == "ApplyFilterAnime" or c.data == "ApplyFilterManga":
-      #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(map(str, user.cur_filter.genres)) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.type + "\nОценка: " + str(user.cur_filter.score))
+      #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(user.cur_filter.genres) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.kind + "\nОценка: " + str(user.cur_filter.score))
       getItems(user, c.message)
       #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(listOfSelectedGenres) + "\nРейтинг: " + ''.join(ratingSelected) + "\nТип: " + ''.join(typeSelected) + "\nОценка: " + ''.join(assesmentSelected))
       
-
+    # Сбросить фильтры
+    if c.data == "ResetFilter":
+      user.cur_filter = ShikimoriItemFilter()
+      user.cur_filter.genres = []
+      photo = Image.open(r'static\filter.jpg')
+      photo = getImage(photo)
+      if srchType == TypeSearch.Anime:
+        key = getFilterMenu(TypeSearch.Anime)
+      else:
+        key = getFilterMenu(TypeSearch.Manga)
+      capt = getCaptionFiltres(user)
+      #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
+      bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=capt, parse_mode='Markdown', reply_markup=key)
+      
 
     # при запросе следующего аниме
     if c.data == "NextAnime":

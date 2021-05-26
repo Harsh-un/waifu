@@ -95,7 +95,6 @@ class ShikimoriItemIterator(AbstractItemIterator):
             self.item_ids = self.get_anime_id_list()
 
         # дописать обработчик событий если item_ids == []
-        print(self.item_ids)
         if not(idx < len(self.item_ids)):
             return None
         anime_info = requests.get(url=self.shiki.site + '/api/animes/' + str(self.item_ids[idx % 50]),
