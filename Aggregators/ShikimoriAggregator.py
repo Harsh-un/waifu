@@ -78,96 +78,115 @@ class ShikimoriAggregator(IAggregator):
 class ShikimoriItemIterator(AbstractItemIterator):
     """Итератор (Shikimori)"""
 
-    def __init__(self, shiki: ShikimoriAggregator, item_filter: ShikimoriItemFilter):
+    def __init__(self, shiki: ShikimoriAggregator, type_elem: TypeElem, item_filter: ShikimoriItemFilter):
         AbstractItemIterator.__init__(self)
         self.shiki = shiki
+        self.type = type_elem
         self.item_filter = item_filter
-        self.item_ids = [] # self.get_anime_id_list()
+        self.item_ids = []
 
     def get_item(self) -> ShikimoriItem:
         """Получить аниме по индексу"""
         if self.item_ids == []:
-            self.item_ids = self.get_anime_id_list()
+            self.item_ids = self.get_data_id()
         elif self.idx // 50 + 1 != self.item_filter.page:
             self.item_filter.page = self.idx // 50 + 1
-            self.item_ids = self.get_anime_id_list()
+            self.item_ids = self.get_data_id()
 
-        if not(self.idx < len(self.item_ids)):
+        if not (self.idx < len(self.item_ids)) or self.item_ids == []:
             return None
-        request_api = self.shiki.site + '/api/animes/' + str(self.item_ids[self.idx % 50])
-        anime_info = requests.get(url=request_api,
-                                  headers={
-                                      "User-Agent": 'Telegram-Waifu',
-                                      'Authorization': 'Bearer ' + self.shiki.access_token
-                                  })
+
+        # создание ссылки на запрос
+        request_url = self.shiki.site
+        if self.type is TypeElem.ANIME:
+            request_url += '/api/animes/'
+        elif self.type is TypeElem.MANGA:
+            request_url += '/api/mangas/'
+        request_url += str(self.item_ids[self.idx % 50])
+
+        details = self.request_detailed(request_url)
         # Если токен невалидный, то получаем новый
-        if anime_info.status_code == 401:
+        if details.status_code == 401:
             self.shiki.get_new_token()
-            anime_info = requests.get(url=request_api,
-                                      headers={
-                                          "User-Agent": 'Telegram-Waifu',
-                                          'Authorization': 'Bearer ' + self.shiki.access_token
-                                      })
-        anime_info = anime_info.json()
+            details = self.request_detailed(request_url)
+        details = details.json()
         genres = []
-        for genre in anime_info['genres']:
+        for genre in details['genres']:
             genres.append(genre['russian'])
 
-        video_url = None
-        if anime_info['licensors'] != []:
-            video_url = self.get_video_link(anime_info['licensors'], request_api)
+        media_urls = None
+        if self.type is TypeElem.ANIME:
+            if details['licensors'] != []:
+                media_urls = self.get_video_link([x.lower() for x in details['licensors']], request_url)
+        elif self.type is TypeElem.MANGA:
+            media_urls = self.get_manga_link(request_url)
 
-        return ShikimoriItem(anime_info['russian'], genres, anime_info['score'],
-                             anime_info['description'], self.shiki.site + anime_info['image']['original'],
-                             self.shiki.site + anime_info['url'], video_url)
+        return ShikimoriItem(details['russian'], genres, details['score'],
+                             details['description'], self.shiki.site + details['image']['original'],
+                             self.shiki.site + details['url'], media_urls)
 
-    def get_video_link(self, licensors: list, request_api: str) -> str:
-        links = requests.get(url=request_api + '/external_links').json()
+    def get_video_link(self, licensors: list, request_url: str) -> list:
+        links = requests.get(url=request_url + '/external_links').json()
+        result = []
         for link in links:
-            if str.lower(link['kind']) == str.lower(licensors[0]):
-                video_url = link['url']
+            if str.lower(link['kind']) in licensors:
+                result.append((link['kind'], link['url']))
                 break
-        return video_url
+        return result
 
+    def get_manga_link(self, request_url: str) -> list:
+        mangas = ['readmanga', 'mangalib', 'remanga', 'mangahub']
+        links = requests.get(url=request_url + '/external_links').json()
+        result = []
+        for link in links:
+            if link['kind'] in mangas:
+                result.append((link['kind'], link['url']))
+        return result if result != [] else None
 
-    def get_anime_id_list(self) -> list:
-        animes = requests.get(url=self.shiki.site + '/api/animes',
-                              headers={
-                                  "User-Agent": 'Telegram-Waifu',
-                                  'Authorization': 'Bearer ' + self.shiki.access_token
-                              },
-                              params={
-                                  'page': self.item_filter.page,
-                                  'limit': self.item_filter.limit,
-                                  'order': self.item_filter.order,
-                                  'score': self.item_filter.score,
-                                  'rating': self.item_filter.rating,
-                                  'kind': self.item_filter.kind,
-                                  'genre': ','.join(self.item_filter.genres),
-                                  'censored': self.item_filter.censored,
-                                  'search': self.item_filter.name
-                              })
+    def get_data_id(self) -> list:
+        request_url = self.shiki.site
+        # запрос зависит от того что мы хотим найти
+        if self.type is TypeElem.ANIME:
+            request_url += '/api/animes'
+        elif self.type is TypeElem.MANGA:
+            request_url += '/api/mangas'
+
+        dataset = self.request_items(request_url)
         # Если токен невалидный, то получаем новый
-        if animes.status_code == 401:
+        if dataset.status_code == 401:
             self.shiki.get_new_token()
-            animes = requests.get(url=self.shiki.site + '/api/animes',
-                                  headers={
-                                      "User-Agent": 'Telegram-Waifu',
-                                      'Authorization': 'Bearer ' + self.shiki.access_token
-                                  },
-                                  params={
-                                      'page': self.item_filter.page,
-                                      'limit': self.item_filter.limit,
-                                      'order': self.item_filter.order,
-                                      'score': self.item_filter.score,
-                                      'rating': self.item_filter.rating,
-                                      'genre': ','.join(self.item_filter.genres),
-                                      'censored': self.item_filter.censored,
-                                      'search': self.item_filter.name
-                                  })
-        animes = animes.json()
+            dataset = self.request_items(request_url)
+        dataset = dataset.json()
+
         # Сохраняем id аниме в список
-        animes_id = []
-        for anime in animes:
-            animes_id.append(anime['id'])
-        return animes_id
+        data_id = []
+        for data in dataset:
+            data_id.append(data['id'])
+        return data_id
+
+    def request_detailed(self, request_url: str) -> requests.Response:
+        details = requests.get(url=request_url,
+                               headers={
+                                   "User-Agent": 'Telegram-Waifu',
+                                   'Authorization': 'Bearer ' + self.shiki.access_token
+                               })
+        return details
+
+    def request_items(self, request_url: str) -> requests.Response:
+        datalist = requests.get(url=request_url,
+                                headers={
+                                    "User-Agent": 'Telegram-Waifu',
+                                    'Authorization': 'Bearer ' + self.shiki.access_token
+                                },
+                                params={
+                                    'page': self.item_filter.page,
+                                    'limit': self.item_filter.limit,
+                                    'order': self.item_filter.order,
+                                    'score': self.item_filter.score,
+                                    'rating': self.item_filter.rating,
+                                    'kind': self.item_filter.kind,
+                                    'genre': ','.join(self.item_filter.genres),
+                                    'censored': self.item_filter.censored,
+                                    'search': self.item_filter.name
+                                })
+        return datalist

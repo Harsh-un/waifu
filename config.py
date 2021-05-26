@@ -2,7 +2,7 @@ import os
 from enum import Enum
 
 # флаги для анме и манги
-class Type(Enum):
+class TypeElem(Enum):
   ANIME = 1
   MANGA = 2
 

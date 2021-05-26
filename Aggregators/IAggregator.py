@@ -28,9 +28,9 @@ class AbstractItemIterator:
 
     def empty(self) -> bool:
         """Пустой ли итератор"""
-        return self.get_item(0) is None
+        return self.get_item() is None
 
-    def get_item(self, idx: int) -> IItem:
+    def get_item(self) -> IItem:
         """Получить item по индексу"""
         pass
 
