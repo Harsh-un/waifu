@@ -1,4 +1,8 @@
 from Aggregators.ShikimoriAggregator import *
+from FavoriteItemList import AlreadyExistException
+from ServerApplication import ServerApplication
+from UserSession import UserSession
+
 
 def test_filter():
     """Проверка работы аггрегатора"""
@@ -33,12 +37,33 @@ def test_search():
     item, next_item = item_iterator.get_item(), item_iterator.get_next_item()
     return
 
+
+def test_favor_list():
+    agg = ShikimoriAggregator(TypeElem.ANIME)
+    iter = agg.get_items(ShikimoriItemFilter(name='Берсерк'))
+
+    app = ServerApplication()
+    user = app.get_user_session(1)
+
+    item = iter.get_item()
+    user.favorite_list.add_item(item)
+    try:
+        user.favorite_list.add_item(item)
+    except AlreadyExistException as ex:
+        print('Уже существует в избранном.')
+    user.favorite_list.remove_item(item)
+    return
+
+
 def test_all():
     """Запуск всех тестов"""
     # Тест 1
-    test_filter()
+    # test_filter()
     # Тест 2
-    test_search()
+    # test_search()
+
+    # Тест 2
+    test_favor_list()
     return
 
 

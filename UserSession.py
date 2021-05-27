@@ -1,5 +1,4 @@
-from Aggregators.IAggregator import AbstractItemIterator
-from FavoriteItemList import FavoriteItemList
+import FavoriteItemList
 
 
 class UserSession:
@@ -10,4 +9,4 @@ class UserSession:
         self.cur_filter = None
         self.cur_iterator = None
         self.cur_type = None
-        self.favorite_list = FavoriteItemList(db)
+        self.favorite_list = FavoriteItemList.FavoriteItemList(self, db)

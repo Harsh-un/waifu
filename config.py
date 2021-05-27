@@ -2,7 +2,7 @@ import os
 
 # Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
 CFG = {
-    'db': 'database.db',
+    'db_file': 'database.db',
 
     'aggregators': {
         'shikimori': {
