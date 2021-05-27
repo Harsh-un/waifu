@@ -1,4 +1,4 @@
-from Aggregators.IAggregator import AbstractItemIterator
+import FavoriteItemList
 
 
 class UserSession:
@@ -9,5 +9,6 @@ class UserSession:
         self.cur_filter = None
         self.cur_iterator = None
         self.cur_type = None
+        self.favorite_list = None
         self.cur_menu = None
         self.cur_msg = None

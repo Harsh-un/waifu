@@ -1,4 +1,6 @@
 from Aggregators.IAggregator import *
+from IItem import IItem
+from IItemMapper import IItemMapper
 from config import *
 import json
 import requests
@@ -31,9 +33,10 @@ class ShikimoriItemFilter(IItemFilter):
 class ShikimoriItem(IItem):
     """Аниме (Shikimori)"""
 
-    def __init__(self, name: str = '', genres: list = [], score: int = 0, description: str = '', image_url: str = '',
+    def __init__(self, agg: IAggregator, name: str = '', genres: list = [], score: int = 0, description: str = '', image_url: str = '',
                  site_url: str = 'https://shikimori.one/', video_url: str = None):
         super().__init__()
+        self.agg = agg
         self.name = name
         self.genres = genres
         self.score = score
@@ -42,13 +45,25 @@ class ShikimoriItem(IItem):
         self.site_url = site_url
         self.video_url = video_url
 
+    def get_agg(self) -> IAggregator:
+        """Агрегатор"""
+        return self.agg
+
+    def get_name(self) -> str:
+        return self.name
+
+    def get_id(self) -> int:
+        """ID"""
+        return 1000
+
 
 class ShikimoriAggregator(IAggregator):
     """Агрегатор (Shikimori)"""
 
-    def __init__(self, type_elem: TypeElem):
+    def __init__(self, db, type_elem: TypeElem):
         super().__init__()
         self.type_elem = type_elem
+        self.mapper = ShikimoriItemMapper(db, self)
         self.site = CFG['aggregators']['shikimori']['site']
         self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
         self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
@@ -58,7 +73,17 @@ class ShikimoriAggregator(IAggregator):
             self.access_token = data['access_token']
             self.refresh_token = data['refresh_token']
 
+    def get_mapper(self) -> IItemMapper:
+        return self.mapper
+
+    def get_id(self) -> int:
+        """ID"""
+        if self.type_elem == TypeElem.ANIME:
+            return 1
+        return 2
+
     def get_name(self) -> str:
+        """Название"""
         if self.type_elem == TypeElem.ANIME:
             return "Shikimori (Anime)"
         return "Shikimori (Manga)"
@@ -131,7 +156,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
         elif self.type is TypeElem.MANGA:
             media_urls = self.get_manga_link(request_url)
 
-        return ShikimoriItem(details['russian'], genres, details['score'],
+        return ShikimoriItem(self.shiki, details['russian'], genres, details['score'],
                              details['description'], self.shiki.site + details['image']['original'],
                              self.shiki.site + details['url'], media_urls)
 
@@ -205,3 +230,39 @@ class ShikimoriItemIterator(AbstractItemIterator):
                                     'search': self.item_filter.name
                                 })
         return datalist
+
+
+class ShikimoriItemMapper(IItemMapper):
+    """Маппер для аниме в БД"""
+    def __init__(self, db, shiki: ShikimoriAggregator):
+        super().__init__()
+        self.db = db
+        self.shiki = shiki
+
+    def find_by_id(self, item_id: int) -> ShikimoriItem:
+        """Найти аниме в БД по ид"""
+        cursor = self.db.cursor()
+        cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?", (self.shiki.get_id(), item_id))
+        row = cursor.fetchone()
+        row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
+
+        if row is None:
+            return None
+        return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'], row['image_url'],
+                             row['site_url'], row['video_url'].split(','))
+
+    def add_item(self, item: ShikimoriItem):
+        """Добавить аниме в БД"""
+        cursor = self.db.cursor()
+        cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
+                        ','.join(map(str, item.genres)), item.image_url, item.site_url, ','.join(item.video_url)))
+        self.db.commit()
+        return
+
+    def remove_item(self, item: ShikimoriItem):
+        """Удалить аниме из БД"""
+        cursor = self.db.cursor()
+        cursor.execute("DELETE FROM shikimori_items WHERE agg_id = ? AND item_id=?", self.shiki.get_id(), item.get_id())
+        self.db.commit()
+        return

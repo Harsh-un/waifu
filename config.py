@@ -3,6 +3,8 @@ from enum import Enum
 
 # Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
 CFG = {
+    'db_file': 'database.db',
+
     'aggregators': {
         'shikimori': {
             'name': 'Shikimori',
@@ -18,8 +20,13 @@ CFG = {
     },
 
     # токен для бота
+<<<<<<< HEAD
     'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
     #'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
+=======
+    # 'TOKEN': '1678506351:AAGigvgqq_NHxQbAi-jI7KuQVC_TOJRXPcg',
+    'TOKEN': '1824001340:AAGDH1gB5HSoBc8dGQToPqAUIRPER_o44hE'
+>>>>>>> b777576342e0ec80e8b9927a1efdd5e1361155b2
 }
 
 # главная директория
