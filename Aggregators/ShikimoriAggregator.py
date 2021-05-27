@@ -244,18 +244,19 @@ class ShikimoriItemMapper(IItemMapper):
         cursor = self.db.cursor()
         cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?", (self.shiki.get_id(), item_id))
         row = cursor.fetchone()
+        row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
+
         if row is None:
             return None
-        names = row.keys()
         return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'], row['image_url'],
-                             row['site_url'], row['video_url'])
+                             row['site_url'], row['video_url'].split(','))
 
     def add_item(self, item: ShikimoriItem):
         """Добавить аниме в БД"""
         cursor = self.db.cursor()
         cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                        (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
-                        ','.join(map(str, item.genres)), item.image_url, item.site_url, item.video_url))
+                        ','.join(map(str, item.genres)), item.image_url, item.site_url, ','.join(item.video_url)))
         self.db.commit()
         return
 
