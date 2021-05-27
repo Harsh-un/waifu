@@ -42,6 +42,13 @@ class ShikimoriItem(IItem):
         self.site_url = site_url
         self.video_url = video_url
 
+    def get_name(self) -> str:
+        return self.name
+
+    def get_id(self) -> int:
+        """ID"""
+        return 1000
+
 
 class ShikimoriAggregator(IAggregator):
     """Агрегатор (Shikimori)"""

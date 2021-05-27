@@ -9,6 +9,14 @@ class IItem:
     def __init__(self):
         pass
 
+    def get_name(self) -> str:
+        """Название"""
+        pass
+
+    def get_id(self) -> int:
+        """ID"""
+        pass
+
 
 class AbstractItemIterator:
     """Итератор, который на ходу подгружает аниме"""
