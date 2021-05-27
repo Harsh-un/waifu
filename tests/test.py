@@ -39,10 +39,11 @@ def test_search():
 
 
 def test_favor_list():
-    agg = ShikimoriAggregator(TypeElem.ANIME)
+    app = ServerApplication()
+
+    agg = ShikimoriAggregator(app.db, TypeElem.ANIME)
     iter = agg.get_items(ShikimoriItemFilter(name='Берсерк'))
 
-    app = ServerApplication()
     user = app.get_user_session(1)
 
     item = iter.get_item()

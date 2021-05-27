@@ -1,4 +1,4 @@
-from Aggregators.IAggregator import IAggregator
+# from Aggregators.IAggregator import IAggregator
 
 
 class IItem:
@@ -7,7 +7,7 @@ class IItem:
     def __init__(self):
         pass
 
-    def get_agg(self) -> IAggregator:
+    def get_agg(self):
         """Агрегатор"""
         pass
 

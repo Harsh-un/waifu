@@ -1,4 +1,5 @@
 from Aggregators.IAggregator import *
+from IItem import IItem
 from IItemMapper import IItemMapper
 from config import *
 import json
@@ -67,6 +68,9 @@ class ShikimoriAggregator(IAggregator):
             data = json.load(file)
             self.access_token = data['access_token']
             self.refresh_token = data['refresh_token']
+
+    def get_mapper(self):
+        return self.mapper
 
     def get_id(self) -> int:
         """ID"""

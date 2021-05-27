@@ -1,6 +1,5 @@
-from Aggregators.IAggregator import *
 import UserSession
-from Aggregators.ShikimoriAggregator import ShikimoriItem
+from IItem import IItem
 
 
 class AlreadyExistException(Exception):
