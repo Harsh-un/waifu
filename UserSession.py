@@ -10,3 +10,4 @@ class UserSession:
         self.cur_iterator = None
         self.cur_type = None
         self.cur_menu = None
+        self.cur_msg = None
