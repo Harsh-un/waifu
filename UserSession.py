@@ -9,3 +9,4 @@ class UserSession:
         self.cur_filter = None
         self.cur_iterator = None
         self.cur_type = None
+        self.cur_menu = None

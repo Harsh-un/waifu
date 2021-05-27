@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 # Конфигурационный файл. Сюда лучше выносить названия, пути к файлам и прочие настраиваемые параметры
 CFG = {
@@ -25,7 +26,14 @@ CFG = {
 MAIN_DIR = os.path.dirname(os.path.realpath(__file__)) + '\\'
 
 
-ratingList = {"G":"g", "PG":"pg", "PG-13":"pg_13", "R-17":"r", "R+":"r_plus"}
+# флаги в каком редиме поиска находимся
+class CurMenu(Enum): 
+    SearchName = 1  # по названию
+    SearchFilter = 2 # по фильтру
+    SearchFalse = 3 # ничего не ищет
+
+
+ratingList = {"G":"g", "PG":"pg", "PG-13":"pg_13", "R-17":"r"}
 assessmentList = {"6+":6, "7+":7, "8+":8}
 typeAnimeList = {"TV Сериал":"tv", "Фильм":"movie", "OVA":"ova", "ONA":"ona", "Спешл":"special", "Клип":"music"}
 typeMangaList = {"Манга":"manga", "Манхва":"manhwa", "Маньхуа":"manhua", "Додзински":"doujin"} # убрал "Ваншот":"one_shot" из за _ запрещенный символ
