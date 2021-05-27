@@ -10,4 +10,5 @@ class UserSession:
         self.cur_iterator = None
         self.cur_type = None
         self.favorite_list = FavoriteItemList.FavoriteItemList(self, db)
+        self.favorite_list.load()
         self.cur_menu = None

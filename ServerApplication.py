@@ -6,10 +6,15 @@ from UserSession import *
 class ServerApplication:
     """Главный класс, который содержит сессии юзеров, агрегаторы"""
     def __init__(self):
-        self.user_session = {}
-        self.shikimori_anime_agg = ShikimoriAggregator(TypeElem.ANIME)
-        self.shikimori_manga_agg = ShikimoriAggregator(TypeElem.MANGA)
         self.db_init()
+        self.user_session = {}
+        self.shikimori_anime_agg = ShikimoriAggregator(self.db, TypeElem.ANIME)
+        self.shikimori_manga_agg = ShikimoriAggregator(self.db, TypeElem.MANGA)
+
+    def get_agg_by_id(self, id: int) -> IAggregator:
+        if id == self.shikimori_anime_agg.get_id():
+            return self.shikimori_anime_agg
+        return self.shikimori_manga_agg
 
     def db_init(self):
         self.db = sqlite3.connect(MAIN_DIR + CFG['db_file'])
