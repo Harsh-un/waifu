@@ -23,17 +23,19 @@ class FavoriteItemList:
     def load(self):
         """Загрузка аниме из БД"""
         cursor = self.app.db.cursor()
-        cursor.execute("SELECT agg_id, item_id FROM favorite_items WHERE user_id = ?", self.user.user_id)
+        cursor.execute("SELECT agg_id, item_id FROM favorite_items WHERE user_id = ?", str(self.user.user_id))
         for row in cursor.fetchall():
-            agg = self.app.get_agg_by_id(row['agg_id'])
-            self.item_list.append(agg.get_mapper().find_by_id(row['item_id']))
+            agg = self.app.get_agg_by_id(row[0])
+            item = agg.get_mapper().find_by_id(row[1])
+            if item is not None:
+                self.item_list.append(item)
         return
 
     def add_item(self, item: IItem):
         """Добавить аниме в избранное"""
         # проверка на то, что объект уже в избранном
         for favor_item in self.item_list:
-            if favor_item.item_id == item.get_id():
+            if favor_item.get_id() == item.get_id():
                 raise AlreadyExistException()
 
         self.item_list.append(item)

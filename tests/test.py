@@ -49,9 +49,11 @@ def test_favor_list():
     item = iter.get_item()
     user.favorite_list.add_item(item)
     try:
+        # добавляем точно такое же аниме в избранное и получаем ошибку
         user.favorite_list.add_item(item)
     except AlreadyExistException as ex:
         print('Уже существует в избранном.')
+    # удаляем из списка избранного
     user.favorite_list.remove_item(item)
     return
 

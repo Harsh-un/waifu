@@ -45,6 +45,10 @@ class ShikimoriItem(IItem):
         self.site_url = site_url
         self.video_url = video_url
 
+    def get_agg(self) -> IAggregator:
+        """Агрегатор"""
+        return self.agg
+
     def get_name(self) -> str:
         return self.name
 
@@ -59,7 +63,7 @@ class ShikimoriAggregator(IAggregator):
     def __init__(self, db, type_elem: TypeElem):
         super().__init__()
         self.type_elem = type_elem
-        self.mapper = ShikimoriItemMapper(self, db)
+        self.mapper = ShikimoriItemMapper(db, self)
         self.site = CFG['aggregators']['shikimori']['site']
         self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
         self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
@@ -69,7 +73,7 @@ class ShikimoriAggregator(IAggregator):
             self.access_token = data['access_token']
             self.refresh_token = data['refresh_token']
 
-    def get_mapper(self):
+    def get_mapper(self) -> IItemMapper:
         return self.mapper
 
     def get_id(self) -> int:
@@ -231,17 +235,18 @@ class ShikimoriItemIterator(AbstractItemIterator):
 class ShikimoriItemMapper(IItemMapper):
     """Маппер для аниме в БД"""
     def __init__(self, db, shiki: ShikimoriAggregator):
-        super().__init__(self)
+        super().__init__()
         self.db = db
         self.shiki = shiki
 
     def find_by_id(self, item_id: int) -> ShikimoriItem:
         """Найти аниме в БД по ид"""
         cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?", self.shiki.get_id(), item_id)
+        cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?", (self.shiki.get_id(), item_id))
         row = cursor.fetchone()
         if row is None:
             return None
+        names = row.keys()
         return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'], row['image_url'],
                              row['site_url'], row['video_url'])
 

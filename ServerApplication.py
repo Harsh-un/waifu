@@ -22,5 +22,8 @@ class ServerApplication:
     def get_user_session(self, user_id: int):
         """Получить сессию юзера"""
         if user_id not in self.user_session:
-            self.user_session[user_id] = UserSession(user_id, self.db)
+            user = UserSession(user_id)
+            self.user_session[user_id] = user
+            user.favorite_list = FavoriteItemList.FavoriteItemList(user, self)
+            user.favorite_list.load()
         return self.user_session[user_id]
