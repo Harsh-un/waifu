@@ -14,11 +14,9 @@ app = ServerApplication()
 id = 0
 bot = telebot.TeleBot(config.CFG['TOKEN'])
 msg = None
-searchName = False  # true если мы перешли в "Поиск по названию"
 
-searchFilter = False #true, если преходим в "Фильтры"
+curMenu = config.CurMenu
 
-srchType = None
 ratingList = config.ratingList
 assessmentList = config.assessmentList
 typeAnimeList = config.typeAnimeList
@@ -108,8 +106,7 @@ def getGenresMenu(genresList, type):
 
 # сброс фильтра для пользователя при выходе из меню Фильтр
 def zeroFilter(user):
-  global searchFilter 
-  searchFilter = False
+  user.cur_menu = curMenu.SearchFalse
   user.cur_filter = ShikimoriItemFilter()
 
 
@@ -140,7 +137,7 @@ def getNovinkiMenuAnime(name, genres, score, description, siteInfo, siteVideo):
     return key, descript
 
 # получаем меню Поиска по названию для аниме
-def searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo):
+def searchNameMenuAnime(user, name, genres, score, description, siteInfo, siteVideo):
       key = types.InlineKeyboardMarkup()
     # если ссылка существует
       if siteVideo is not None:
@@ -150,13 +147,13 @@ def searchNameMenuAnime(name, genres, score, description, siteInfo, siteVideo):
       but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
       #but_4 = types.InlineKeyboardButton(text="Назад", callback_data="BackAnime")
       #but_5 = types.InlineKeyboardButton(text="Вперед", callback_data="NextAnime")
-      if srchType is TypeSearch.Anime:
-        if searchFilter:
+      if user.cur_aggregator == app.shikimori_anime_agg:
+        if user.cur_menu == curMenu.SearchFilter:
           but_6 = types.InlineKeyboardButton(text="Вернуться к фильтрам", callback_data="FilterAnime")
         else:
           but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Anime")
-      elif srchType is TypeSearch.Manga:
-        if searchFilter:
+      else:
+        if user.cur_menu == curMenu.SearchFilter:
           but_6 = types.InlineKeyboardButton(text="Вернуться к фильтрам", callback_data="FilterManga")
         else:
           but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Manga")
@@ -205,7 +202,7 @@ def getItems(user, message):
     img = Image.open(urlopen(anime_info.image_url))
     image = getImage(img)
     siteInfo, siteVideo = None,None
-    key, descript = searchNameMenuAnime(anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
+    key, descript = searchNameMenuAnime(user, anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
     #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
     #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
     global msg
@@ -214,16 +211,15 @@ def getItems(user, message):
     #bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
   else: 
     key = types.InlineKeyboardMarkup()
-    global srchType
-    if searchFilter:
-      if srchType is TypeSearch.Anime:
+    if user.cur_menu == curMenu.SearchFilter:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         but_2 = types.InlineKeyboardButton(text="Назад к фильтрам", callback_data="FilterAnime")
-      elif srchType is TypeSearch.Manga:
+      else:
         but_2 = types.InlineKeyboardButton(text="Назад к фильтрам", callback_data="FilterManga")
     else:  
-      if srchType is TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Anime")
-      elif srchType is TypeSearch.Manga:
+      else:
         but_2 = types.InlineKeyboardButton(text="Назад", callback_data="Manga")
     key.row(but_2)
     image = Image.open(r'static\searchnameAnime.jpg')
@@ -234,14 +230,14 @@ def getItems(user, message):
 
 # Описание всех выбранных фильтров
 def getCaptionFiltres(user):
-    if user.cur_filter.genres == [] and user.cur_filter.kind == "" and user.cur_filter.rating == "" and user.cur_filter.score == 1:
+    if user.cur_filter.genres == [] and user.cur_filter.kind == '' and user.cur_filter.rating == '' and user.cur_filter.score == 1:
       capt = "Вы еще ничего не выбрали\nПора это сделать!"
-    elif srchType is TypeSearch.Anime: 
+    elif user.cur_aggregator == app.shikimori_anime_agg:
       capt = "*Вы выбрали:*\n*Жанры:* " + ', '.join(list(map(lambda x: genresAnime[x], user.cur_filter.genres))) + \
                           "\n*Оценка:* " + str(user.cur_filter.score) + \
                           "\n*Рейтинг:* " + user.cur_filter.rating + \
                           "\n*Тип:* " + user.cur_filter.kind
-    elif srchType is TypeSearch.Manga: 
+    elif user.cur_aggregator == app.shikimori_manga_agg: 
       capt = "*Вы выбрали:*\n*Жанры:* " + ', '.join(list(map(lambda x: genresMangu[x], user.cur_filter.genres))) + \
                           "\n*Оценка:* " + str(user.cur_filter.score) + \
                           "\n*Тип:* " + user.cur_filter.kind
@@ -308,13 +304,12 @@ def inline(message):
 # обработка отправки сообщения пользователя
 @bot.message_handler(content_types=['text'])
 def send_text(message):
-  global searchName
+  user = app.get_user_session(message.from_user.id)
   # если мы в "Поиск по названию"
-  if searchName:
-    user = app.get_user_session(message.from_user.id)
+  if user.cur_menu == curMenu.SearchName:
     user.cur_filter.name = message.text.lower()
     getItems(user, message)
-    searchName = False
+    user.cur_menu = curMenu.SearchFalse
   else:
     bot.send_message(message.chat.id, "Не стоит спамить!\nНачни заново")
     bot.delete_message(message.chat.id, msg.message_id)
@@ -333,8 +328,6 @@ def inline(c):
 
       zeroFilter(user)
 
-      global srchType
-      srchType = TypeSearch.Anime
       photo = Image.open(r'static\animeMenu.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -362,7 +355,6 @@ def inline(c):
       zeroFilter(user)
 
       user.cur_aggregator = app.shikimori_manga_agg
-      srchType = TypeSearch.Manga
       photo = Image.open(r'static\mangaMenu.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -407,8 +399,9 @@ def inline(c):
     
     #поиск по названию аниме
     if c.data == "SearchByNameAnime":
-      global searchName
-      searchName = True
+      #global searchName
+      #searchName = True
+      user.cer_menu = curMenu.SearchName
       photo = Image.open(r'static\searchnameAnime.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -418,7 +411,8 @@ def inline(c):
 
     #поиск по названию аниме
     if c.data == "SearchByNameManga":
-      searchName = True
+      #searchName = True
+      user.cer_menu = curMenu.SearchName
       photo = Image.open(r'static\searchnameAnime.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -439,9 +433,7 @@ def inline(c):
     
     # фильтры для аниме
     if c.data == "FilterAnime":
-      global searchFilter
-      searchFilter=True
-
+      user.cur_menu = curMenu.SearchFilter
       photo = Image.open(r'static\filter.jpg')
       photo = getImage(photo)
       key = getFilterMenu(TypeSearch.Anime)
@@ -452,7 +444,7 @@ def inline(c):
     # фильтры для манги
     if c.data == "FilterManga":
 
-      searchFilter=True
+      user.cur_menu = curMenu.SearchFilter
 
       photo = Image.open(r'static\filterManga.jpg')
       photo = getImage(photo)
@@ -483,11 +475,11 @@ def inline(c):
       
       # если жанр уже есть в выбранных, то не добавляем
       if c.data not in user.cur_filter.genres:
-        if srchType is TypeSearch.Anime:
+        if user.cur_aggregator == app.shikimori_anime_agg:
           bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + genresAnime[c.data] + " с id = " + c.data)
           user.cur_filter.genres.append(c.data)
           bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresAnime[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
-        elif srchType is TypeSearch.Manga:
+        elif user.cur_aggregator == app.shikimori_manga_agg:
           bot.answer_callback_query(c.id, show_alert=True, text="Выбран жанр: " + genresMangu[c.data] + " с id = " + c.data)
           user.cur_filter.genres.append(c.data)
           bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption="*Выбранные жанры:* " + ', '.join(list(map(lambda x: genresMangu[x], user.cur_filter.genres))), parse_mode='Markdown', reply_markup=keyGenre)
@@ -501,9 +493,9 @@ def inline(c):
       for item, id in ratingList.items():
         but = types.InlineKeyboardButton(text=item, callback_data=item)
         key.row(but)
-      if srchType is TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterAnime")
-      elif srchType is TypeSearch.Manga:
+      elif user.cur_aggregator == app.shikimori_manga_agg:
         but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterManga")
       but_2 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
       key.row(but_1, but_2)
@@ -526,9 +518,9 @@ def inline(c):
       for item, id in assessmentList.items():
         but = types.InlineKeyboardButton(text=item, callback_data=item)
         key.row(but)
-      if srchType is TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterAnime")
-      elif srchType is TypeSearch.Manga:
+      elif user.cur_aggregator == app.shikimori_manga_agg:
         but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterManga")
       but_2 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
       key.row(but_1, but_2)
@@ -546,17 +538,15 @@ def inline(c):
       photo = Image.open(r'static\typeAnime.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
-      if srchType is TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         lst = typeAnimeList
-      else:
+        but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterAnime")
+      elif user.cur_aggregator == app.shikimori_manga_agg:
         lst = typeMangaList
+        but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterManga")
       for item, id in lst.items():
         but = types.InlineKeyboardButton(text=item, callback_data=item)
         key.row(but)
-      if srchType is TypeSearch.Anime:
-        but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterAnime")
-      elif srchType is TypeSearch.Manga:
-        but_1 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="FilterManga")
       but_2 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
       key.row(but_1, but_2)
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(photo))
@@ -564,10 +554,10 @@ def inline(c):
 
     # при выборе Типа
     if c.data in typeAnimeList or c.data in typeMangaList:
-      if srchType is TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeAnimeList[c.data]))
         user.cur_filter.kind = typeAnimeList[c.data]
-      else:
+      elif user.cur_aggregator == app.shikimori_manga_agg:
         bot.answer_callback_query(c.id, show_alert=True, text="Выбран Тип: " + c.data + " с id = " + str(typeMangaList[c.data]))
         user.cur_filter.kind = typeMangaList[c.data]
       typeSelected.append(c.data)
@@ -584,7 +574,7 @@ def inline(c):
       user.cur_filter.genres = []
       photo = Image.open(r'static\filter.jpg')
       photo = getImage(photo)
-      if srchType == TypeSearch.Anime:
+      if user.cur_aggregator == app.shikimori_anime_agg:
         key = getFilterMenu(TypeSearch.Anime)
       else:
         key = getFilterMenu(TypeSearch.Manga)
