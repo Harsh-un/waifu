@@ -13,7 +13,6 @@ app = ServerApplication()
 
 id = 0
 bot = telebot.TeleBot(config.CFG['TOKEN'])
-msg = None
 
 curMenu = config.CurMenu
 
@@ -120,7 +119,7 @@ def getNovinkiMenuAnime(name, genres, score, description, siteInfo, siteVideo):
       key.row(but_1)
     but_2 = types.InlineKeyboardButton(text="Подробнее", url=siteInfo)
     but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
-    but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="BackAnime")
+    but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="PrevAnime")
     but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="NextAnime")
     but_6 = types.InlineKeyboardButton(text="Вернуться назад", callback_data="Anime")
     but_7 = types.InlineKeyboardButton(text="На главную", callback_data="BackMainPage")
@@ -141,12 +140,19 @@ def searchNameMenuAnime(user, name, genres, score, description, siteInfo, siteVi
       key = types.InlineKeyboardMarkup()
     # если ссылка существует
       if siteVideo is not None:
-        but_1 = types.InlineKeyboardButton(text="Смотреть", url=siteVideo)
-        key.row(but_1)
+        for url in siteVideo:  
+          but_1 = types.InlineKeyboardButton(text="Смотреть", url=url)
+          key.row(but_1)
 
       but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
-      #but_4 = types.InlineKeyboardButton(text="Назад", callback_data="BackAnime")
-      #but_5 = types.InlineKeyboardButton(text="Вперед", callback_data="NextAnime")
+      key.row(but_3)
+      if user.cur_iterator != 0:
+        but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="NextAnime")
+        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="PrevAnime")
+        key.row(but_4, but_5)
+      else:
+        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="PrevAnime")
+        key.row(but_5)
       if user.cur_aggregator == app.shikimori_anime_agg:
         if user.cur_menu == curMenu.SearchFilter:
           but_6 = types.InlineKeyboardButton(text="Вернуться к фильтрам", callback_data="FilterAnime")
@@ -170,8 +176,7 @@ def searchNameMenuAnime(user, name, genres, score, description, siteInfo, siteVi
       if siteInfo is not None:
           but_2 = types.InlineKeyboardButton(text="Подробнее", url=siteInfo)
           key.row(but_2)
-      key.row(but_3)
-      #key.row(but_4, but_5)
+
       key.row(but_6)
       key.row(but_7)
       return key, descript
@@ -190,24 +195,18 @@ def getImage(image):
     return image_fon
 
 # получение аниме/манги по фильтрам
-def getItems(user, message):
+def getItems(user, message, anime_info):
 
-  user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
-
-  # получили результат поиска
-  anime_info = user.cur_iterator.get_item()
-
-  #print(anime_info.name)
   if anime_info is not None: #если введенное название нашлось
     img = Image.open(urlopen(anime_info.image_url))
     image = getImage(img)
-    siteInfo, siteVideo = None,None
-    key, descript = searchNameMenuAnime(user, anime_info.name, anime_info.genres, anime_info.score, anime_info.description, siteInfo, siteVideo) # тут так же для манги
+    siteVideo = None
+    key, descript = searchNameMenuAnime(user, anime_info.name, anime_info.genres, anime_info.score, anime_info.description, anime_info.site_url, anime_info.video_url) # тут так же для манги
     #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
     #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
-    global msg
-    bot.delete_message(message.chat.id, msg.message_id)
-    msg = bot.send_photo(message.chat.id, image, caption=descript, parse_mode='Markdown', reply_markup=key)
+    
+    bot.delete_message(message.chat.id, user.cur_msg.message_id)
+    user.cur_msg = bot.send_photo(message.chat.id, image, caption=descript, parse_mode='Markdown', reply_markup=key)
     #bot.send_photo(message.chat.id, image, caption=descript,reply_markup=key)
   else: 
     key = types.InlineKeyboardMarkup()
@@ -224,8 +223,8 @@ def getItems(user, message):
     key.row(but_2)
     image = Image.open(r'static\searchnameAnime.jpg')
     getImage(image)
-    bot.delete_message(message.chat.id, msg.message_id)
-    msg = bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
+    bot.delete_message(message.chat.id, user.cur_msg.message_id)
+    user.cur_msg = bot.send_photo(message.chat.id, image, caption="Ничего не найдено(", reply_markup=key)
 
 
 # Описание всех выбранных фильтров
@@ -243,7 +242,7 @@ def getCaptionFiltres(user):
                           "\n*Тип:* " + user.cur_filter.kind
     return capt  
 
-
+'''
 def getAnime():
     name = "Виви: Песнь флюоритового глаза / Vivy: Fluorite Eye's Song"
     genres = ["Экшен", "Музыка", "Фантастика", "Триллер"]
@@ -281,9 +280,10 @@ def getAnimeForSearchName():
     siteInfo = "https://shikimori.one/animes/431-howl-no-ugoku-shiro"
     siteVideo = 'https://hd.kinopoisk.ru/film/4c4086bb916d4d01b984e2d5a8a63005/' #хе-хе, ссылка на кинопоиск
     return name, genres, score, description, image, siteInfo, siteVideo
+'''
 
 # второй аргумент = true, если мы к главной странице возвращаемся, и false при старте бота
-def setMainPage(message, edit):
+def setMainPage(user, message, edit):
     photo = open('static/avatarka.jpg', 'rb')
     key = types.InlineKeyboardMarkup()
     but_1 = types.InlineKeyboardButton(text="Аниме", callback_data="Anime")
@@ -293,13 +293,13 @@ def setMainPage(message, edit):
         bot.edit_message_media(chat_id=message.chat.id, message_id=message.message_id, media=types.InputMediaPhoto(photo))
         bot.edit_message_caption(chat_id=message.chat.id, message_id=message.message_id, caption="Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>, бот созданный скрасить твое одиночество.\nЧто желаешь посмотреть?".format(message.from_user, bot.get_me()), parse_mode='html', reply_markup=key)
     else:
-        global msg
-        msg = bot.send_photo(message.chat.id, photo, caption="Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>, бот, созданный скрасить твое одиночество.\nЧто желаешь посмотреть?".format(message.from_user, bot.get_me()), parse_mode='html', reply_markup=key)
+        user.cur_msg = bot.send_photo(message.chat.id, photo, caption="Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>, бот, созданный скрасить твое одиночество.\nЧто желаешь посмотреть?".format(message.from_user, bot.get_me()), parse_mode='html', reply_markup=key)
         #bot.send_photo(message.chat.id, photo, caption="Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>, бот созданный скрасить твое одиночество.\nЧто желаешь посмотреть?".format(message.from_user, bot.get_me()), parse_mode='html', reply_markup=key)
 
 @bot.message_handler(commands=["start"])
 def inline(message):
-    setMainPage(message, False)   
+    user = app.get_user_session(message.from_user.id)
+    setMainPage(user, message, False)   
 
 # обработка отправки сообщения пользователя
 @bot.message_handler(content_types=['text'])
@@ -308,12 +308,15 @@ def send_text(message):
   # если мы в "Поиск по названию"
   if user.cur_menu == curMenu.SearchName:
     user.cur_filter.name = message.text.lower()
-    getItems(user, message)
+    user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+    # получили результат поиска
+    anime_info = user.cur_iterator.get_item()
+    getItems(user, message, anime_info)
     user.cur_menu = curMenu.SearchFalse
   else:
     bot.send_message(message.chat.id, "Не стоит спамить!\nНачни заново")
-    bot.delete_message(message.chat.id, message.message_id)
-    setMainPage(message, False)
+    bot.delete_message(message.chat.id, user.cur_msg.message_id)
+    setMainPage(user, message, False)
   
 
 
@@ -376,9 +379,9 @@ def inline(c):
 
     # кнопка "Вернуться на главную"
     if c.data == "BackMainPage":
-      setMainPage(c.message, True)
+      setMainPage(user, c.message, True)
 
-
+    '''
     # кнопка "Новинки" для Аниме
     if c.data == "NewAnime":
       name, genres, score, description, url, siteInfo, siteVideo = getAnime()
@@ -396,12 +399,12 @@ def inline(c):
       key, descript = getNovinkiMenuAnime(name, genres, score, description, siteInfo, siteVideo) # тут так же для манги
       bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
       bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
-    
+    '''
     #поиск по названию аниме
     if c.data == "SearchByNameAnime":
       #global searchName
       #searchName = True
-      user.cer_menu = curMenu.SearchName
+      user.cur_menu = curMenu.SearchName
       photo = Image.open(r'static\searchnameAnime.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -412,7 +415,7 @@ def inline(c):
     #поиск по названию аниме
     if c.data == "SearchByNameManga":
       #searchName = True
-      user.cer_menu = curMenu.SearchName
+      user.cur_menu = curMenu.SearchName
       photo = Image.open(r'static\searchnameAnime.jpg')
       photo = getImage(photo)
       key = types.InlineKeyboardMarkup()
@@ -586,17 +589,26 @@ def inline(c):
     # при запросе следующего аниме
     if c.data == "NextAnime":
       bot.answer_callback_query(c.id, show_alert=True, text="Хотим получить следующее аниме")
+      user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+      # получили результат поиска
+      anime_info = user.cur_iterator.get_next_item()
+      getItems(user, c.message, anime_info)
+
 
     # при запросе следующего аниме
-    if c.data == "BackAnime":
+    if c.data == "PrevAnime":
       bot.answer_callback_query(c.id, show_alert=True, text="Хотим получить предыдущее аниме")
+      user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+      # получили результат поиска
+      anime_info = user.cur_iterator.get_prev_item()
+      getItems(user, c.message, anime_info)
 
     # при запросе следующего манги
     if c.data == "NextManga":
       bot.answer_callback_query(c.id, show_alert=True, text="Хотим получить следующее аниме")
 
     # при запросе следующего манги
-    if c.data == "BackManga":
+    if c.data == "PrevManga":
       bot.answer_callback_query(c.id, show_alert=True, text="Хотим получить предыдущее аниме")
 
 
