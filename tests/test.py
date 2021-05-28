@@ -47,8 +47,8 @@ def test_favor_list():
     user = app.get_user_session(1)
 
     item = iter.get_item()
-    user.favorite_list.add_item(item)
     try:
+        user.favorite_list.add_item(item)
         # добавляем точно такое же аниме в избранное и получаем ошибку
         user.favorite_list.add_item(item)
     except AlreadyExistException as ex:

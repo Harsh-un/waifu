@@ -1,3 +1,6 @@
+import sqlite3
+from contextlib import closing
+
 from Aggregators.IAggregator import *
 from IItem import IItem
 from IItemMapper import IItemMapper
@@ -60,10 +63,10 @@ class ShikimoriItem(IItem):
 class ShikimoriAggregator(IAggregator):
     """Агрегатор (Shikimori)"""
 
-    def __init__(self, db, type_elem: TypeElem):
+    def __init__(self, type_elem: TypeElem):
         super().__init__()
         self.type_elem = type_elem
-        self.mapper = ShikimoriItemMapper(db, self)
+        self.mapper = ShikimoriItemMapper(self)
         self.site = CFG['aggregators']['shikimori']['site']
         self.client_id = CFG['aggregators']['shikimori']['auth']['client_id']
         self.client_secret = CFG['aggregators']['shikimori']['auth']['client_secret']
@@ -234,35 +237,40 @@ class ShikimoriItemIterator(AbstractItemIterator):
 
 class ShikimoriItemMapper(IItemMapper):
     """Маппер для аниме в БД"""
-    def __init__(self, db, shiki: ShikimoriAggregator):
+    def __init__(self, shiki: ShikimoriAggregator):
         super().__init__()
-        self.db = db
         self.shiki = shiki
 
     def find_by_id(self, item_id: int) -> ShikimoriItem:
         """Найти аниме в БД по ид"""
-        cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?", (self.shiki.get_id(), item_id))
-        row = cursor.fetchone()
-        row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
+        with closing(sqlite3.connect(MAIN_DIR + CFG['db_file'])) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?",
+                           (self.shiki.get_id(), item_id))
+            row = cursor.fetchone()
+            row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
 
-        if row is None:
-            return None
-        return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'], row['image_url'],
-                             row['site_url'], row['video_url'].split(','))
+            if row is None:
+                return None
+            return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'],
+                                 row['image_url'], row['site_url'], row['video_url'].split(','))
+        return None
 
     def add_item(self, item: ShikimoriItem):
         """Добавить аниме в БД"""
-        cursor = self.db.cursor()
-        cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                       (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
-                        ','.join(map(str, item.genres)), item.image_url, item.site_url, ','.join(item.video_url)))
-        self.db.commit()
+        with closing(sqlite3.connect(MAIN_DIR + CFG['db_file'])) as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                           (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
+                            ','.join(map(str, item.genres)), item.image_url, item.site_url, ','.join(item.video_url)))
+            conn.commit()
         return
 
     def remove_item(self, item: ShikimoriItem):
         """Удалить аниме из БД"""
-        cursor = self.db.cursor()
-        cursor.execute("DELETE FROM shikimori_items WHERE agg_id = ? AND item_id=?", self.shiki.get_id(), item.get_id())
-        self.db.commit()
+        with closing(sqlite3.connect(MAIN_DIR + CFG['db_file'])) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM shikimori_items WHERE agg_id = ? AND item_id=?",
+                           (self.shiki.get_id(), item.get_id()))
+            conn.commit()
         return

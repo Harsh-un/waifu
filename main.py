@@ -312,7 +312,7 @@ def send_text(message):
     user.cur_menu = curMenu.SearchFalse
   else:
     bot.send_message(message.chat.id, "Не стоит спамить!\nНачни заново")
-    bot.delete_message(message.chat.id, msg.message_id)
+    bot.delete_message(message.chat.id, message.message_id)
     setMainPage(message, False)
   
 
