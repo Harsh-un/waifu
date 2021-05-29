@@ -63,11 +63,11 @@ def test_all():
     # Тест 1
     # test_filter()
     # Тест 2
-    # test_search()
+    test_search()
 
     # Тест 2
-    test_favor_list()
-    return
+    #test_favor_list()
+    #return
 
 
 if __name__ == "__main__":

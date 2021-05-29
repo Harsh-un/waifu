@@ -107,6 +107,7 @@ def getGenresMenu(genresList, type):
 def zeroFilter(user):
   user.cur_menu = curMenu.SearchFalse
   user.cur_filter = ShikimoriItemFilter()
+  user.cur_filter.genres = [] 
 
 
 
@@ -138,20 +139,21 @@ def getNovinkiMenuAnime(name, genres, score, description, siteInfo, siteVideo):
 # получаем меню Поиска по названию для аниме
 def searchNameMenuAnime(user, name, genres, score, description, siteInfo, siteVideo):
       key = types.InlineKeyboardMarkup()
+      print(siteVideo)
     # если ссылка существует
       if siteVideo is not None:
         for url in siteVideo:  
-          but_1 = types.InlineKeyboardButton(text="Смотреть", url=url)
+          but_1 = types.InlineKeyboardButton(text="См. на " + url[0], url=url[1])
           key.row(but_1)
 
       but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
       key.row(but_3)
-      if user.cur_iterator != 0:
-        but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="NextAnime")
-        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="PrevAnime")
+      if user.cur_iterator.idx != 0:
+        but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="PrevAnime")
+        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="NextAnime")
         key.row(but_4, but_5)
       else:
-        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="PrevAnime")
+        but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="NextAnime")
         key.row(but_5)
       if user.cur_aggregator == app.shikimori_anime_agg:
         if user.cur_menu == curMenu.SearchFilter:
@@ -200,7 +202,6 @@ def getItems(user, message, anime_info):
   if anime_info is not None: #если введенное название нашлось
     img = Image.open(urlopen(anime_info.image_url))
     image = getImage(img)
-    siteVideo = None
     key, descript = searchNameMenuAnime(user, anime_info.name, anime_info.genres, anime_info.score, anime_info.description, anime_info.site_url, anime_info.video_url) # тут так же для манги
     #bot.edit_message_media(chat_id=c.message.chat.id, message_id=c.message.message_id, media=types.InputMediaPhoto(image))
     #bot.edit_message_caption(chat_id=c.message.chat.id, message_id=c.message.message_id, caption=descript, parse_mode='Markdown', reply_markup=key)
@@ -427,6 +428,10 @@ def inline(c):
     # избранное для аниме
     if c.data == "ToFavouritesAnime":
       bot.answer_callback_query(c.id, show_alert=True, text="Добавлено в избранное")
+      anime_info = user.cur_iterator.get_item()
+      print("добавили в избранное: " + anime_info.name)
+      user.favorite_list.add_item(anime_info)
+
     #просмотреть избранное для аниме
     if c.data == "FavouritesAnime":
       bot.answer_callback_query(c.id, show_alert=True, text="Здесь будет все, что Вы добавили в избранное")
@@ -567,8 +572,10 @@ def inline(c):
 
     # Применить фильтры
     if c.data == "ApplyFilterAnime" or c.data == "ApplyFilterManga":
-      #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(user.cur_filter.genres) + "\nРейтинг: " + user.cur_filter.rating + "\nТип: " + user.cur_filter.kind + "\nОценка: " + str(user.cur_filter.score))
-      getItems(user, c.message)
+      user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
+      # получили результат поиска
+      anime_info = user.cur_iterator.get_item()
+      getItems(user, c.message, anime_info)
       #bot.answer_callback_query(c.id, show_alert=True, text= "Жанры: " + ', '.join(listOfSelectedGenres) + "\nРейтинг: " + ''.join(ratingSelected) + "\nТип: " + ''.join(typeSelected) + "\nОценка: " + ''.join(assesmentSelected))
       
     # Сбросить фильтры
@@ -592,6 +599,7 @@ def inline(c):
       user.cur_iterator = user.cur_aggregator.get_items(user.cur_filter)
       # получили результат поиска
       anime_info = user.cur_iterator.get_next_item()
+      print("текущий итертор: " + str(user.cur_iterator.idx))
       getItems(user, c.message, anime_info)
 
 
