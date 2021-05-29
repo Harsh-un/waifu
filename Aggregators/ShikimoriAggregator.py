@@ -175,7 +175,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
             if str.lower(link['kind']) in licensors:
                 result.append((link['kind'], link['url']))
                 break
-        return result
+        return result if result != [] else None
 
     def get_manga_link(self, request_url: str) -> list:
         mangas = ['readmanga', 'mangalib', 'remanga', 'mangahub']
