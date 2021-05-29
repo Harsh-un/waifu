@@ -5,6 +5,7 @@ from UserSession import *
 
 class ServerApplication:
     """Главный класс, который содержит сессии юзеров, агрегаторы"""
+
     def __init__(self):
         self.user_session = {}
         self.shikimori_anime_agg = ShikimoriAggregator(TypeElem.ANIME)

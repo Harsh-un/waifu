@@ -36,7 +36,8 @@ class ShikimoriItemFilter(IItemFilter):
 class ShikimoriItem(IItem):
     """Аниме (Shikimori)"""
 
-    def __init__(self, agg: IAggregator, name: str = '', genres: list = [], score: int = 0, description: str = '', image_url: str = '',
+    def __init__(self, agg: IAggregator, name: str = '', genres: list = [], score: int = 0, description: str = '',
+                 image_url: str = '',
                  site_url: str = 'https://shikimori.one/', video_url: str = None):
         super().__init__()
         self.agg = agg
@@ -237,6 +238,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
 
 class ShikimoriItemMapper(IItemMapper):
     """Маппер для аниме в БД"""
+
     def __init__(self, shiki: ShikimoriAggregator):
         super().__init__()
         self.shiki = shiki

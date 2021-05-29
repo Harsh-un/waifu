@@ -4,12 +4,14 @@ from IItemMapper import IItemMapper
 
 class IItemFilter:
     """Фильтр формируется путем нажатия определенных кнопок"""
+
     def __init__(self):
         pass
 
 
 class IAggregator:
     """Агрегатор"""
+
     def __init__(self):
         pass
 
