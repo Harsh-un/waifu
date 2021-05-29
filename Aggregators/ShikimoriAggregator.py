@@ -165,12 +165,11 @@ class ShikimoriItemIterator(AbstractItemIterator):
                              self.shiki.site + details['url'], media_urls)
 
     def get_video_link(self, licensors: list, request_url: str) -> list:
-        links_content = requests.get(url=request_url + '/external_links')
-        try:
-            links = links_content.json()
-        except Exception as ex:
-            return []
-
+        links_content = self.request_detailed(request_url + '/external_links')
+        if links_content.status_code == 401:
+            self.shiki.get_new_token()
+            links_content = self.request_detailed(request_url + '/external_links')
+        links = links_content.json()
         result = []
         for link in links:
             if str.lower(link['kind']) in licensors:
@@ -180,7 +179,11 @@ class ShikimoriItemIterator(AbstractItemIterator):
 
     def get_manga_link(self, request_url: str) -> list:
         mangas = ['readmanga', 'mangalib', 'remanga', 'mangahub']
-        links = requests.get(url=request_url + '/external_links').json()
+        links = self.request_detailed(request_url + '/external_links')
+        if links.status_code == 401:
+            self.shiki.get_new_token()
+            links = self.request_detailed(request_url + '/external_links')
+        links = links.json()
         result = []
         for link in links:
             if link['kind'] in mangas:
