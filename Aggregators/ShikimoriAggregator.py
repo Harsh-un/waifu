@@ -36,11 +36,12 @@ class ShikimoriItemFilter(IItemFilter):
 class ShikimoriItem(IItem):
     """Аниме (Shikimori)"""
 
-    def __init__(self, agg: IAggregator, name: str = '', genres: list = [], score: int = 0, description: str = '',
+    def __init__(self, agg: IAggregator, item_id: int, name: str = '', genres: list = [], score: int = 0, description: str = '',
                  image_url: str = '',
                  site_url: str = 'https://shikimori.one/', video_url: str = None):
         super().__init__()
         self.agg = agg
+        self.item_id = item_id
         self.name = name
         self.genres = genres
         self.score = score
@@ -58,7 +59,7 @@ class ShikimoriItem(IItem):
 
     def get_id(self) -> int:
         """ID"""
-        return 1000
+        return self.item_id
 
 
 class ShikimoriAggregator(IAggregator):
@@ -124,6 +125,10 @@ class ShikimoriItemIterator(AbstractItemIterator):
         self.item_filter = item_filter
         self.item_ids = []
 
+    def has_next(self) -> bool:
+        """next"""
+        return self.idx + 1 < len(self.item_ids)
+
     def get_item(self) -> ShikimoriItem:
         """Получить аниме по индексу"""
         if self.item_ids == []:
@@ -132,8 +137,13 @@ class ShikimoriItemIterator(AbstractItemIterator):
             self.item_filter.page = self.idx // 50 + 1
             self.item_ids = self.get_data_id()
 
-        if not (self.idx < len(self.item_ids)) or self.item_ids == []:
+        if not self.has_next() or self.item_ids == []:
             return None
+
+        item_id = self.item_ids[self.idx % 50]
+        found_item = self.shiki.get_mapper().find_by_id(item_id)
+        if found_item is not None:
+            return found_item
 
         # создание ссылки на запрос
         request_url = self.shiki.site
@@ -141,7 +151,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
             request_url += '/api/animes/'
         elif self.type is TypeElem.MANGA:
             request_url += '/api/mangas/'
-        request_url += str(self.item_ids[self.idx % 50])
+        request_url += str(item_id)
 
         details = self.request_detailed(request_url)
         # Если токен невалидный, то получаем новый
@@ -153,34 +163,39 @@ class ShikimoriItemIterator(AbstractItemIterator):
         for genre in details['genres']:
             genres.append(genre['russian'])
 
-        media_urls = None
+        media_urls = []
         if self.type is TypeElem.ANIME:
             if details['licensors'] != []:
                 media_urls = self.get_video_link([x.lower() for x in details['licensors']], request_url)
         elif self.type is TypeElem.MANGA:
             media_urls = self.get_manga_link(request_url)
 
-        return ShikimoriItem(self.shiki, details['russian'], genres, details['score'],
+        new_item = ShikimoriItem(self.shiki, item_id, details['russian'], genres, details['score'],
                              details['description'], self.shiki.site + details['image']['original'],
                              self.shiki.site + details['url'], media_urls)
+        self.shiki.get_mapper().add_item(new_item)
+        return new_item
 
     def get_video_link(self, licensors: list, request_url: str) -> list:
-        links_content = requests.get(url=request_url + '/external_links')
-        try:
-            links = links_content.json()
-        except Exception as ex:
-            return []
-
+        links_content = self.request_detailed(request_url + '/external_links')
+        if links_content.status_code == 401:
+            self.shiki.get_new_token()
+            links_content = self.request_detailed(request_url + '/external_links')
+        links = links_content.json()
         result = []
         for link in links:
             if str.lower(link['kind']) in licensors:
                 result.append((link['kind'], link['url']))
                 break
-        return result
+        return result if result != [] else None
 
     def get_manga_link(self, request_url: str) -> list:
         mangas = ['readmanga', 'mangalib', 'remanga', 'mangahub']
-        links = requests.get(url=request_url + '/external_links').json()
+        links = self.request_detailed(request_url + '/external_links')
+        if links.status_code == 401:
+            self.shiki.get_new_token()
+            links = self.request_detailed(request_url + '/external_links')
+        links = links.json()
         result = []
         for link in links:
             if link['kind'] in mangas:
@@ -250,11 +265,11 @@ class ShikimoriItemMapper(IItemMapper):
             cursor.execute("SELECT * FROM shikimori_items WHERE agg_id = ? AND item_id = ?",
                            (self.shiki.get_id(), item_id))
             row = cursor.fetchone()
-            row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
-
             if row is None:
                 return None
-            return ShikimoriItem(self.shiki, row['name'], row['genres'].split(','), row['score'], row['description'],
+
+            row = {x[0]: row[i] for i, x in enumerate(cursor.description)}
+            return ShikimoriItem(self.shiki, item_id, row['name'], row['genres'].split(','), row['score'], row['description'],
                                  row['image_url'], row['site_url'], row['video_url'].split(','))
         return None
 
@@ -264,7 +279,7 @@ class ShikimoriItemMapper(IItemMapper):
             cursor = conn.cursor()
             cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                            (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
-                            ','.join(map(str, item.genres)), item.image_url, item.site_url, ','.join(item.video_url)))
+                            ','.join(item.genres), item.image_url, item.site_url, ','.join(item.video_url)))
             conn.commit()
         return
 
