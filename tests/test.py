@@ -3,14 +3,11 @@ from FavoriteItemList import AlreadyExistException
 from ServerApplication import ServerApplication
 
 
-app = ServerApplication()
-
-
 def test_filter():
     """Проверка работы аггрегатора"""
 
     # объект аггрегатора
-    agg = ShikimoriAggregator(app, TypeElem.ANIME)
+    agg = ShikimoriAggregator(TypeElem.ANIME)
 
     # объект фильтра, который заполняется через интерфейс телеги
     item_filter = ShikimoriItemFilter()
@@ -25,9 +22,10 @@ def test_filter():
     next_item = item_iterator.get_next_item()
     return
 
+
 def test_search():
     # объект аггрегатора
-    agg = ShikimoriAggregator(app, TypeElem.ANIME)
+    agg = ShikimoriAggregator(TypeElem.ANIME)
 
     # объект фильтра, который заполняется через интерфейс телеги
     item_filter = ShikimoriItemFilter(name='Берсерк')
@@ -41,9 +39,10 @@ def test_search():
 
 
 def test_favor_list():
-    agg = ShikimoriAggregator(app.db, TypeElem.ANIME)
+    agg = ShikimoriAggregator(TypeElem.ANIME)
     iter = agg.get_items(ShikimoriItemFilter(name='Берсерк'))
 
+    app = ServerApplication()
     user = app.get_user_session(1)
 
     item = iter.get_item()
