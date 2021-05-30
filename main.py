@@ -305,7 +305,8 @@ def setMainPage(user, message, edit):
     photo = open('static/avatarka.jpg', 'rb')
     key = types.InlineKeyboardMarkup()
     but_1 = types.InlineKeyboardButton(text="Аниме", callback_data="Anime")
-    but_2 = types.InlineKeyboardButton(text="Манга", callback_data="Manga")
+    but_2 = types.InlineKeyboardButton(text="Манга", callback_data="Anime") # todo: remove
+    #but_2 = types.InlineKeyboardButton(text="Манга", callback_data="Manga")
     key.add(but_1, but_2)
     if edit:
         bot.edit_message_media(chat_id=message.chat.id, message_id=message.message_id,
