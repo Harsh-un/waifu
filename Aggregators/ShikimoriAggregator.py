@@ -141,7 +141,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
             return None
 
         item_id = self.item_ids[self.idx % 50]
-        found_item = self.shiki.get_mapper().find_by_id(item_id)
+        found_item = None #self.shiki.get_mapper().find_by_id(item_id)
         if found_item is not None:
             return found_item
 
@@ -173,7 +173,7 @@ class ShikimoriItemIterator(AbstractItemIterator):
         new_item = ShikimoriItem(self.shiki, item_id, details['russian'], genres, details['score'],
                              details['description'], self.shiki.site + details['image']['original'],
                              self.shiki.site + details['url'], media_urls)
-        self.shiki.get_mapper().add_item(new_item)
+        # self.shiki.get_mapper().add_item(new_item)
         return new_item
 
     def get_video_link(self, licensors: list, request_url: str) -> list:
@@ -279,7 +279,8 @@ class ShikimoriItemMapper(IItemMapper):
             cursor = conn.cursor()
             cursor.execute("INSERT INTO shikimori_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                            (self.shiki.get_id(), item.get_id(), item.name, item.description, item.score,
-                            ','.join(item.genres), item.image_url, item.site_url, ','.join(item.video_url)))
+                            ','.join(item.genres), item.image_url, item.site_url,
+                            ','.join([x[1] for x in item.video_url])))
             conn.commit()
         return
 
