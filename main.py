@@ -157,13 +157,20 @@ def searchNameMenuAnime(user, name, genres, score, description, siteInfo, siteVi
     but_3 = types.InlineKeyboardButton(text="В избранное", callback_data="ToFavouritesAnime")
     key.row(but_3)
 
+    but_4 = None
+    but_5 = None
     if user.cur_iterator.has_prev():
         but_4 = types.InlineKeyboardButton(text="Предыдущее", callback_data="PrevAnime")
-        key.row().add(but_4)
-
     if user.cur_iterator.has_next():
         but_5 = types.InlineKeyboardButton(text="Следующее", callback_data="NextAnime")
-        key.row().add(but_5)
+
+    if but_4 is not None and but_5 is not None:
+        key.row().add(but_4, but_5)
+    else:
+        if but_4 is not None:
+            key.row().add(but_4)
+        else:
+            key.row().add(but_5)
 
     if user.cur_aggregator == app.shikimori_anime_agg:
         if user.cur_menu == curMenu.SearchFilter:
